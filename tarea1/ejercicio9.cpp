@@ -87,32 +87,32 @@ int main() {
     renako("Cuantas simulaciones quiere que se den?")
     cin >> simulaciones;
     double proba = a(0,simulaciones), probb = b(0,simulaciones), probc = c(0, simulaciones);
-    std::cout << "--- Resultados de la Simulacion con " << simulaciones << " Simulaciones " << std::endl;
+    cout << "--- Resultados de la Simulacion con " << simulaciones << " Simulaciones " << std::endl;
 
-    std::cout << "Probabilidad simulada (Ejercicio A): " << proba << std::endl;
+    cout << "Probabilidad simulada (Ejercicio A): " << proba << std::endl;
     // Calculo teorico para A:
     // Ruta arriba: 0.9 * 0.8 = 0.72 -> P(Fallo) = 0.28
     // Ruta abajo:  0.9 * 0.7 = 0.63 -> P(Fallo) = 0.37
     // Fallo total: 0.28 * 0.37 = 0.1036
     // Exito total: 1 - 0.1036 = 0.8964
-    std::cout << "Probabilidad teorica (Ejercicio A):   0.8964" << std::endl;
-    std::cout << "Diferencia en el ejercicio A: " << std::abs(proba - 0.8964) << std::endl;
+    cout << "Probabilidad teorica (Ejercicio A):   0.8964" << std::endl;
+    cout << "Diferencia en el ejercicio A: " << std::abs(proba - 0.8964) << std::endl;
 
 
-    std::cout << "Probabilidad simulada (Ejercicio B): " << probb << std::endl;
+    cout << "Probabilidad simulada (Ejercicio B): " << probb << std::endl;
     // Calculo teorico para B: 1 - (ProbFalloArriba * ProbFalloAbajo)
     // Ruta arriba: 0.9*0.8 = 0.72 -> Fallo: 0.28
     // Ruta abajo:  0.9*0.8 = 0.72 -> Fallo: 0.28
     // Fallo total: 0.28 * 0.28 = 0.0784
     // Exito total: 1 - 0.0784 = 0.9216
-    std::cout << "Probabilidad teorica (Ejercicio B):   0.9216" << std::endl;
-    std::cout << "Diferencia en el ejercicio B: " << std::abs(probb - 0.9216) << std::endl;
+    cout << "Probabilidad teorica (Ejercicio B):   0.9216" << std::endl;
+    cout << "Diferencia en el ejercicio B: " << std::abs(probb - 0.9216) << std::endl;
 
 
-    std::cout << "Probabilidad simulada (Ejercicio C): " << probc << std::endl;
+    cout << "Probabilidad simulada (Ejercicio C): " << probc << std::endl;
 
-    std::cout << "Probabilidad teorica (Ejercicio C):   0.92376" << std::endl;
-    std::cout << "Diferencia en el ejercicio C: " << std::abs(probc - 0.92376) << std::endl;
+    cout << "Probabilidad teorica (Ejercicio C):   0.92376" << std::endl;
+    cout << "Diferencia en el ejercicio C: " << std::abs(probc - 0.92376) << std::endl;
 
     return 0;
 }
