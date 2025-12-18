@@ -96,7 +96,7 @@ int main() {
     // Fallo total: 0.28 * 0.37 = 0.1036
     // Exito total: 1 - 0.1036 = 0.8964
     std::cout << "Probabilidad teorica (Ejercicio A):   0.8964" << std::endl;
-    std::cout << "Diferencia en el ejercicio A: " << std::abs(proba - 0.92376) << std::endl;
+    std::cout << "Diferencia en el ejercicio A: " << std::abs(proba - 0.8964) << std::endl;
 
 
     std::cout << "Probabilidad simulada (Ejercicio B): " << probb << std::endl;
@@ -106,7 +106,7 @@ int main() {
     // Fallo total: 0.28 * 0.28 = 0.0784
     // Exito total: 1 - 0.0784 = 0.9216
     std::cout << "Probabilidad teorica (Ejercicio B):   0.9216" << std::endl;
-    std::cout << "Diferencia en el ejercicio B: " << std::abs(probb - 0.92376) << std::endl;
+    std::cout << "Diferencia en el ejercicio B: " << std::abs(probb - 0.9216) << std::endl;
 
 
     std::cout << "Probabilidad simulada (Ejercicio C): " << probc << std::endl;
