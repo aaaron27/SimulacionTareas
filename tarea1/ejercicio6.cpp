@@ -2,22 +2,15 @@
 #include <random>
 using namespace std;
 
-typedef long long int lli;
+/*
+Se tiene un mazo de cartas convencional, el cual ha sido barajdo. Se reparten 5 cartas y se desea establecer la probabilidad que dentro de esas 5 cartas se encuentre un par de ases.
+a. Resuelva el problema utilizando probabilidad cl sica.
+b. Resuelva el problema construyendo un programa de simulacin.
+*/
 
 random_device rd;
 mt19937 gen(rd());
 uniform_real_distribution<double> dist(0.0, 1.0);
-
-const int maxn = 100;
-int C[maxn+1][maxn+1];
-
-void fillC() {
-    C[0][0]++;
-    for (int n = 1; n <= maxn; n++) {
-        C[n][0] = C[n][n] = 1;
-        for (int k = 1; k < n; k++) C[n][k] = C[n-1][k-1] + C[n-1][k];
-    }
-}
 
 // 1 -> es as
 // 0 -> else
@@ -26,8 +19,7 @@ bool isAs(int ases, int n) {
 }
 
 double a() {
-    fillC();
-    return static_cast<double>(C[4][2] * C[48][3]) / C[52][5];
+    return 103776.0f / 2598960;
 }
 
 double b(){

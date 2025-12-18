@@ -4,6 +4,11 @@
 #include <vector>
 using namespace std;
 
+/*
+Se tiene un mazo de cartas convencional, el cual ha sido barajdo. Se reparten 5 cartas y se desea establecer la probabilidad que las 5 cartas sumen entre 17 y 21.
+Resuelva el problema construyendo un programa de simulacion.
+*/
+
 random_device rd;
 mt19937 gen(rd());
 
@@ -24,7 +29,7 @@ int sumCartas() {
 }
 
 int main() {
-    int casos = 1000000;
+    int casos = 100000;
     int exitos = 0;
     
     for (int i = 0; i < casos; i++) {
@@ -32,7 +37,7 @@ int main() {
         if (sum >= 17 && sum <= 21) exitos++;
     }
 
-    cout << static_cast<double>(exitos) / casos << '\n';
+    cout << "A: " << static_cast<double>(exitos) / casos << '\n';
 
     return 0;
 }

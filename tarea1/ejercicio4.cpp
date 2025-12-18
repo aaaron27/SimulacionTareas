@@ -2,6 +2,12 @@
 #include <random>
 using namespace std;
 
+/*
+Se tiene un mazo de cartas convencional.
+a. Cual es la probabilidad de sacar dos cartas y que ambos sean ases?
+b. Construya un programa de simulaci n que genere estos resultados.
+*/
+
 random_device rd;
 mt19937 gen(rd());
 uniform_real_distribution<double> dist(0.0, 1.0);
@@ -15,7 +21,7 @@ bool isAs(int ases, int n) {
 int main() {
     int n = 52;
     int ases = 4;
-    int casos = 100000000;
+    int casos = 1000000;
     int exitos = 0;
 
     for (int i = 0; i < casos; i++) {
@@ -27,7 +33,8 @@ int main() {
             : 0;
     }
 
-    cout << static_cast<double>(exitos) / casos << '\n';
+    cout << "A: 1/221 ~ " << 1.0f/221 << '\n';
+    cout << "B: " << static_cast<double>(exitos) / casos << '\n';
 
     return 0;
 }

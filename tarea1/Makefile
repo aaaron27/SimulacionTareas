@@ -8,5 +8,12 @@ all: $(BIN)
 %: %.cpp
 	$(CXX) $< -o $@
 
+run: $(BIN)
+	@for prog in $(BIN); do \
+		echo "=== Ejecutando $$prog ==="; \
+		./$$prog; \
+		echo ""; \
+	done
+
 clean:
 	rm -f $(BIN)

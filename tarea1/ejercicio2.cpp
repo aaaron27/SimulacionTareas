@@ -8,17 +8,6 @@ typedef long long int lli;
 Se tienen 3 monedas. Las cuales pueden dar como resultado escudo o corona.
 */
 
-const int maxn = 1000;
-int C[maxn+1][maxn+1];
-
-void fillC() {
-    C[0][0]++;
-    for (int n = 1; n <= maxn; n++) {
-        C[n][0] = C[n][n] = 1;
-        for (int k = 1; k < n; k++) C[n][k] = C[n-1][k-1] + C[n-1][k];
-    }
-}
-
 // 1 -> corona
 // 0 -> escudo
 bool moneda() {
@@ -27,8 +16,7 @@ bool moneda() {
 
 //a. Utilizando probabilidad matematica calcule el valor de obtener dos coronas.
 double ejercicioA() {
-    fillC();
-    return C[3][2] * pow(0.5, 2) * 0.5f;
+    return 0.375f;
 }
 
 
@@ -88,11 +76,12 @@ int main() {
     // esta vara reinicia la seed porque sin esto siempre daria la misma secuencia
     srand(time({}));
 
-    cout << "Ejercicio A\n" << ejercicioA() << '\n';
-    cout << "Ejercicio B\n" << ejercicioB() << '\n';
-    cout << "Ejercicio C\n" << ejercicioC() << '\n';
-    cout << "Ejercicio D\n" << ejercicioD() << '\n';
-    cout << "Ejercicio E\n" << ejercicioE() << '\n';
+    cout << "A: " << ejercicioA() << '\n';
+    cout << "B: " << ejercicioB() << '\n';
+    cout << "C: " << ejercicioC() << '\n';
+    cout << "D: " << ejercicioD() << '\n';
+    cout << "E: " << ejercicioE() << '\n';
+    cout << "F: Distribucion Binomial\n";
     
     return 0;
 }
