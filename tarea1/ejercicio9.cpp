@@ -22,7 +22,7 @@ const double S2_F = 0.70;
 const double P = 0.80;
 const double S2_M = 0.80;
 
-mt19937 rng(std::random_device{}());
+mt19937 rng(random_device{}());
 uniform_real_distribution<double> dist(0.0, 1.0);
 
 bool is_active(double probability) {

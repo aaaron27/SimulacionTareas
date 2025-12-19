@@ -20,7 +20,7 @@ double ejercicioA() {
 }
 
 
-// b. Con un programa de simulaci n, calcule la probabilidad de obtener 0 coronas.
+// b. Con un programa de simulacion, calcule la probabilidad de obtener 0 coronas.
 double ejercicioB() {
     int casos = 10000000;
     int exitos = 0;
@@ -59,7 +59,7 @@ double ejercicioD() {
     return static_cast<double>(exitos) / casos;
 }
 
-// e. Con un programa de simulaci n, calcule la probabilidad de obtener 3 coronas.
+// e. Con un programa de simulacion, calcule la probabilidad de obtener 3 coronas.
 double ejercicioE() {
     int casos = 10000000;
     int exitos = 0;

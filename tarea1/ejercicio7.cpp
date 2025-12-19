@@ -12,18 +12,29 @@ Resuelva el problema construyendo un programa de simulacion.
 random_device rd;
 mt19937 gen(rd());
 
-int sumCartas() {
-    vector<int> baraja = {
-        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10,
-        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10,
-        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10,
-        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10,
-    };
-    
-    shuffle(baraja.begin(), baraja.end(), gen);
+vector<int> baraja = {
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
+};
 
+int sumCartas() {
+    shuffle(baraja.begin(), baraja.end(), gen);
+    int asses=0;
     int sum = 0;
-    for (int i = 0; i < 5; i++) sum += baraja[i];
+    for (int i = 0; i < 5; i++) {
+        if(baraja[i]!=1){sum += baraja[i];}
+        else {
+            asses++;
+        }
+    }
+    while(asses--) {
+        if(sum+14<=21) {
+            sum+=14;
+        }
+        else{sum++;}
+    }
 
     return sum;
 }
