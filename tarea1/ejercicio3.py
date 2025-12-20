@@ -5,7 +5,7 @@ N = 3
 P = 0.50
 SIMULACIONES = int(input("Cantidad de Simulaciones: "))
 print(f"Simulando Distribución Binomial (n={N}, p={P}) con {SIMULACIONES} intentos...")
-
+#Binomial
 resultados = np.random.binomial(N, P, SIMULACIONES)
 
 plt.figure(figsize=(10, 6))
