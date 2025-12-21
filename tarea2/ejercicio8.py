@@ -21,7 +21,7 @@ def todo(x0, a, c, m):
 
     return esCompleto(list)
 
-m = 9
+m = 19
 a = [i for i in range(1, m) if (i-1) % 3 == 0]
 c = [i for i in range(1, m) if math.gcd(i, m) == 1]
 x0 = range(m)
