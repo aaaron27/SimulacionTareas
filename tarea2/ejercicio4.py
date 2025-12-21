@@ -4,7 +4,7 @@ def congMixto(n,a,c,m):
 # None si es completo
 # Sino da el numero que falta
 def esCompleto(list):
-    for i in range(len(list)):
+    for i in range(1, len(list)):
         if not list[i]:
             return i
     return None
@@ -16,10 +16,10 @@ def todo(x0, a, c, m, l):
     print(f"{l}:")
     for _ in range(m+1):
         print(x0,end=" ")
-        x0 = congMixto(x0,a,c,m)
+        x0 = congMixto(x0, a, c, m)
         list[x0] = 1
     print()
-
+    
     val = esCompleto(list)
     print("\nEs completo?", "Si" if val == None else f"Falta el numero {val} es aparecer\n")
     
