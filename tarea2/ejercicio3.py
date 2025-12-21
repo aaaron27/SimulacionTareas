@@ -1,13 +1,3 @@
-"""
-Genere 50 n meros aleatorios de 4 d gitos utilizando el generador de cuadrados medios utilizando los siguientes par metros.
-
-a. x(0) = 3567345
-
-b. x(0) = 1234500012
-
-c. x(0) = 4567234902
-"""
-
 DIGITOS = 4
 
 def cantDigitos(n):

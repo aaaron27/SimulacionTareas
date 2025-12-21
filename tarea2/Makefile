@@ -10,3 +10,6 @@ run:
 
 	@echo "---- Ejecutando ejercicio4 ----"
 	python3 ejercicio4.py
+
+	@echo "---- Ejecutando ejercicio5 ----"
+	python3 ejercicio5.py
