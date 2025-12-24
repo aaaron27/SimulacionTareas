@@ -1,3 +1,10 @@
+"""
+Utilice el m todo congruencial binario pero en lugar de realizar un xor con las posiciones 0 y 1, de derecha a izquierda,
+realice un xor con las posiciones 0 y 2. Utilice las siguientes semillas y muestre si realiza todo el recorrido o no.
+a. x(0) = 110
+b. x(0) = 1111
+"""
+
 def SET(n, i):
     return n | 1<<(i)
 
@@ -24,4 +31,4 @@ for _ in range(10):
 print()
 
 print("A(110): Recorrido completo")
-print("A(1111): Recorrido incompleto")
+print("B(1111): Recorrido incompleto")
