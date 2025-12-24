@@ -26,11 +26,12 @@ def expLog(a, b):
 		return m * a
 	return m
 
-def congMultiplicativo(n,a,m):
+def congMultiplicativo(n, a, m):
 	return (n*a)%m
 
 def calcMax(m):
     if esPotencia2(m) and m >= 8:
+        # m/4 = 2^b2/4 = 2^{b2 - 2}
         return m // 4
     return phi(m)
 
@@ -40,9 +41,9 @@ def todo(x0, a, b1, b2, l):
 
     print(f"{l}: x(0) = {x0}")
 
-    # x0 tiene que ser coprimo con m para poder alcanzar todos los coprimos
-    if math.gcd(x0, m) != 1 or math.gcd(a, m) != 1:
-        return "No"
+
+    if math.gcd(x0, m) != 1 or math.gcd(a, m) != 1 or a%8 != 5:
+        return False
     
     vis = set()
     while x0 not in vis:
@@ -50,10 +51,9 @@ def todo(x0, a, b1, b2, l):
         x0 = congMultiplicativo(x0, a, m)
     
     if len(vis) == periodoMaximo: 
-        return "Si"
-    return "No"
+        return True
+    return False
 
-    
 print(todo(7, 5, 2, 6, "A"))
 print(todo(9, 11, 2, 7, "B"))
 print(todo(3, 221, 10, 3, "C"))
