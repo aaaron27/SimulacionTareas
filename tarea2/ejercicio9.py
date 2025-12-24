@@ -38,7 +38,7 @@ m = 10
 a_mult = range(1, m)
 x0_mult = range(1, m)
 
-print("Metodo Congruencial Multiplicativo")
+print("Metodo Congruencial Multiplicativo\nMetodo imposible, porque el periodo maximo en phi(10)")
 for a in a_mult:
     for x0 in x0_mult:
         if todoMultiplicativo(x0, a, m) == None:
