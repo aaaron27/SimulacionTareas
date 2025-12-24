@@ -15,10 +15,9 @@ def congruencialBinario(n):
     print(bin(n), "-", ultimoBit, "^", antePenultimoBit, "->", xorBits, "->", n>>1)
     return n>>1
 
-print("La semilla: [1, 32[")
-
 x0 = 16
 print("Semilla:", x0)
+print("Operacion: (n&4)>>2, agarrar el primer y antepenultimo bit")
 for i in range(31):
     print(x0, "\t-> ", end="")
     x0 = congruencialBinario(x0)
