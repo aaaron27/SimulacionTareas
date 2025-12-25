@@ -49,6 +49,10 @@ a_aditivo = [i for i in range(1, m) if math.gcd(i, m) == 1]
 x0_aditivo = range(m)
 
 print("Metodo Congruencial Aditivo")
+print("x0 no decide si el recorrido es completo, solo en que punto empieza por tanto vamos a ignorar x0")
+print("x0: [0, 10[")
+print("a: {x: [1, 10[ | gcd(x, 10) = 1}\n")
+
 for a in a_aditivo:
     for x0 in x0_aditivo:
         if todoAditivo(x0, a, m) == None:

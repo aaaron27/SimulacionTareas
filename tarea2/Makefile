@@ -28,3 +28,6 @@ run:
 
 	@echo "\n---- Ejecutando ejercicio10 ----"
 	python3 ejercicio10.py
+
+	@echo "\n---- Ejecutando ejercicio Extra ----"
+	python3 ejercicioExtra.py

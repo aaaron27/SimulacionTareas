@@ -25,6 +25,10 @@ c = [i for i in range(1, m) if math.gcd(i, m) == 1]
 x0 = range(m)
 
 print("x0 no decide si el recorrido es completo, solo en que punto empieza por tanto vamos a ignorar x0")
+print("x0: [0, 9[")
+print("a: {x: [1, 10[ | (x-1)%3 = 0}")
+print("c: {x: [1, 10[ | gcd(x, 10) = 1}\n")
+
 print(f"(x0, b, c)")
 for i in a:
     for j in c:
