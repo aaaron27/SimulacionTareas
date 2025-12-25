@@ -3,5 +3,5 @@
 Ejecutar
 
 ```bash
-make run
+make
 ```
