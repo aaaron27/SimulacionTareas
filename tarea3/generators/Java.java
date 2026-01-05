@@ -14,7 +14,8 @@ public final class Java {
            
             for (int i = 0; i < N; i++) {
                 fw.write(Double.toString(random.nextDouble()));
-                fw.write('\n');
+                if (i < N-1)
+                    fw.write('\n');
             }
 
             fw.close(); 

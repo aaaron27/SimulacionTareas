@@ -12,7 +12,13 @@ if os.path.exists(file_path2):
     os.remove(file_path2)
 
 with open(file_path1, 'a') as f:
-    f.writelines(f"{random()}\n" for _ in range(n))
+    f.writelines(
+        f"{random()}\n" if i < n - 1 else f"{random()}"
+        for i in range(n)
+    )
 
 with open(file_path2, 'a') as f:
-    f.writelines(f"{randint(1, 6)}\n" for _ in range(n))
+    f.writelines(
+        f"{randint(1, 6)}\n" if i < n - 1 else f"{randint(1, 6)}"
+        for i in range(n)
+    )
