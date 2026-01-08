@@ -1,6 +1,5 @@
 from math import sqrt
-from itertools import pairwise, chain
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 JAVA_PATH = "./data/Java.txt"
 PYTHON01_PATH = "./data/Python01.txt"
@@ -146,11 +145,11 @@ def prueba_huecos_digitos_enteros(numbers, simbolos):
     for i in range(7, len(res)):
         fo[7] += sum(res[i])
 
-    p = 1/m
+    p = 1 / m
     q = 1 - p
 
     pe = [q**i * p for i in range(7)]
-    pe.append(q**7)   # >=7
+    pe.append(q**7) # >=7
 
     n = sum(fo)
     fe = [n * pe[i] for i in range(8)]
@@ -159,6 +158,36 @@ def prueba_huecos_digitos_enteros(numbers, simbolos):
 
     punto_rechazo = 14.07
     print(x2)
+    return x2 <= punto_rechazo
+
+def prueba_huecos_digitos_enteros2(numbers, simbolos):
+    m = len(simbolos)
+
+    res = calc_frecuencias_enteros(numbers, simbolos)
+
+    fo = [0]*5
+    for i in range(4):
+        fo[i] = sum(res[i])
+    for i in range(4, len(res)):
+        fo[4] += sum(res[i])
+
+    p = 1 / m
+    q = 1 - p
+
+    pe = [
+        p,
+        p*q,
+        q**2*p,
+        q**3*p,
+        q**4
+    ]
+
+    n = sum(fo)
+    fe = [n * pi for pi in pe]
+
+    x2 = sum((fo[i] - fe[i])**2 / fe[i] for i in range(5))
+
+    punto_rechazo = 9.49
     return x2 <= punto_rechazo
 
 def prueba_huecos_numeros(numbers, alpha, beta, prob, total_clases=20):
@@ -196,6 +225,59 @@ def prueba_huecos_numeros(numbers, alpha, beta, prob, total_clases=20):
     resultado = chi_square <= valor_critico
     return f"{resultado} (Chi2: {chi_square:.2f}, Critico: {valor_critico})"
 
+def prueba_poker(numbers, is_int=False, max_val=1):
+    probs = [0.3024, 0.5040, 0.1080, 0.0720, 0.0090, 0.0045, 0.0001]
+    nombres = ["Dif", "Par", "2Par", "Trio", "Full", "Poker", "Quint"]
+
+    conteos = [0] * 7 # para las 7 categorias
+
+    for n in numbers:
+        val = n
+        if is_int:
+            # Normalizar enteros para obtener decimales
+            val = float(n) / (max_val + 1)
+
+        # asegurar que siempre haya 5 digitos (rellena con 0s)
+        decimal_part = "{:.5f}".format(val).split('.')[1][:5]
+        hand = [char for char in decimal_part]
+
+        # Analizar la mano usando Counter
+        counts_dict = Counter(hand)
+        shape = sorted(counts_dict.values(), reverse=True)
+
+        if shape == [1, 1, 1, 1, 1]:
+            conteos[0] += 1 # Diferentes
+        elif shape == [2, 1, 1, 1]:
+            conteos[1] += 1 # Un Par
+        elif shape == [2, 2, 1]:
+            conteos[2] += 1 # Dos Pares
+        elif shape == [3, 1, 1]:
+            conteos[3] += 1 # trio
+        elif shape == [3, 2]:
+            conteos[4] += 1 # Full House
+        elif shape == [4, 1]:
+            conteos[5] += 1 # Poker
+        elif shape == [5]:
+            conteos[6] += 1 # 5
+
+    # Calcular Chi-Cuadrada
+    chi_square = 0.0
+    total = len(numbers)
+
+    for i in range(7):
+        obs = conteos[i]
+        esp = total * probs[i]
+
+        # Evitar n/0
+        if esp > 0:
+            chi_square += ((obs - esp) ** 2) / esp
+
+    # Chi2(0.95, 6) = 12.592
+    valor_critico = 12.592
+
+    resultado = chi_square <= valor_critico
+    return f"{resultado} (Chi2: {chi_square:.2f})"
+
 def execute_tests():
     print("Java")
     java_media = 0.5
@@ -207,20 +289,20 @@ def execute_tests():
     print("\tPrueba de Corridas:")
     print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos(java_numbers))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(java_numbers, 0.5, 1.0, 0.5))
-    print("\tPrueba de Poker:")
+    print("\tPrueba de Poker:", prueba_poker(java_numbers))
     print("\tPrueba de Series:")
 
     print("Erlang")
-    erlang_media = 0.0
+    erlang_media = 0.5
     erlang_alfa = 1.96
-    erlang_desviacion_estandar = 0.0
+    erlang_desviacion_estandar = sqrt(1/12)
 
-    print("\tPrueba de Promedio:")
-    print("\tPrueba de Varianza:")
+    print("\tPrueba de Promedio:", prueba_promedios(erlang_media, erlang_alfa, erlang_desviacion_estandar, erlang_numbers))
+    print("\tPrueba de Varianza:", prueba_varianza(erlang_numbers, 1/12, 997228, 1002770))
     print("\tPrueba de Corridas:")
     print("\tPrueba de Huecos con digitos:")
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(erlang_numbers, 0.5, 1.0, 0.5))
-    print("\tPrueba de Poker:")
+    print("\tPrueba de Poker:", prueba_poker(erlang_numbers))
     print("\tPrueba de Series:")
 
     print("Python")
@@ -233,7 +315,7 @@ def execute_tests():
     print("\tPrueba de Corridas:")
     print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos(python1_numbers))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(python1_numbers, 0.5, 1.0, 0.5))
-    print("\tPrueba de Poker:")
+    print("\tPrueba de Poker:", prueba_poker(python1_numbers))
     print("\tPrueba de Series:")
 
     print("Python 2")
@@ -246,7 +328,7 @@ def execute_tests():
     print("\tPrueba de Corridas:")
     print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos_enteros(python2_numbers, [1,2,3,4,5,6]))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(python2_numbers, 3, 3, 1/6))
-    print("\tPrueba de Poker:")
+    print("\tPrueba de Poker:", prueba_poker(python2_numbers, is_int=True, max_val=6))
     print("\tPrueba de Series:")
 
     print("C")
@@ -259,7 +341,7 @@ def execute_tests():
     print("\tPrueba de Corridas:")
     print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos_enteros(c1_numbers, [1,2,3,4]))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(c1_numbers, 2, 2, 0.25))
-    print("\tPrueba de Poker:")
+    print("\tPrueba de Poker:", prueba_poker(c1_numbers, is_int=True, max_val=4))
     print("\tPrueba de Series:")
 
     print("C2")
@@ -272,20 +354,20 @@ def execute_tests():
     print("\tPrueba de Corridas:")
     print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos_enteros(c2_numbers, [1,2,3,4,5,6,7,8]))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(c2_numbers, 5, 5, 1/8))
-    print("\tPrueba de Poker:")
+    print("\tPrueba de Poker:", prueba_poker(c2_numbers, is_int=True, max_val=8))
     print("\tPrueba de Series:")
 
     print("Scheme")
-    scheme_media = 0.0
+    scheme_media = 10.5
     scheme_alfa = 1.96
-    scheme_desviacion_estandar = 0.0
+    scheme_desviacion_estandar = sqrt(399/12)
 
-    print("\tPrueba de Promedio:")
-    print("\tPrueba de Varianza:")
+    print("\tPrueba de Promedio:", prueba_promedios(scheme_media, scheme_alfa, scheme_desviacion_estandar, scheme_numbers))
+    print("\tPrueba de Varianza:", prueba_varianza(scheme_numbers, 399/12, 997228, 1002770))
     print("\tPrueba de Corridas:")
-    print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos_enteros(scheme_numbers, [i for i in range(1, 21)]))
+    print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos_enteros2(scheme_numbers, [i for i in range(1, 21)]))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(scheme_numbers, 10, 10, 0.05))
-    print("\tPrueba de Poker:")
+    print("\tPrueba de Poker:", prueba_poker(scheme_numbers, is_int=True, max_val=20))
     print("\tPrueba de Series:")
 
     print("Rust")
@@ -298,8 +380,8 @@ def execute_tests():
     print("\tPrueba de Corridas:")
     print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos(rust_numbers))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(rust_numbers, 0.5, 1.0, 0.5))
-    print("\tPrueba de Poker:")
-    print("\tPrueba de Series:")
+    print("\tPrueba de Poker:", prueba_poker(rust_numbers))
+    print("\tPrueba de Series:") 
 
 def main():
     init_numbers()
