@@ -1,5 +1,6 @@
 from math import sqrt
 from itertools import pairwise, chain
+from collections import defaultdict
 
 JAVA_PATH = "./data/Java.txt"
 PYTHON01_PATH = "./data/Python01.txt"
@@ -49,13 +50,13 @@ def init_numbers():
     with open(RUST_PATH, "r") as f:
         rust_numbers = [float(i) for i in f.read().splitlines()]
 
-    # # [1, 20]
-    # with open(SCHEME_PATH, "r") as f:
-    #     scheme_numbers = [int(i) for i in f.read().splitlines()]
+    # [1, 20]
+    with open(SCHEME_PATH, "r") as f:
+        scheme_numbers = [int(i) for i in f.read().splitlines()]
 
-    # # [0,1[
-    # with open(ERLANG_PATH, "r") as f:
-    #     erlang_numbers = [float(i) for i in f.read().splitlines()]
+    # [0,1[
+    with open(ERLANG_PATH, "r") as f:
+        erlang_numbers = [float(i) for i in f.read().splitlines()]
 
 def calc_limites_promedios(media, z, desviacion_estandar, total):
     calc = desviacion_estandar / sqrt(total)
@@ -79,72 +80,82 @@ def prueba_varianza(numbers, varianza, l_inf, l_sup):
     x2 = (len(numbers) - 1) * calc_varianza_muestral(numbers) / varianza
     return l_inf <= x2 <= l_sup
 
-def calc_frecuencias(columnas):
-    sec = []
-    for i in columnas:
-        sec.extend(i)
+def calc_frecuencias(listas):
+    res = [[0 for _ in range(10)] for _ in range(100)]
 
-    freq = {i: {} for i in range(10)}
+    for digitos in listas:
+        for digito in range(10):
+            pos = [i for i, x in enumerate(digitos) if x == digito]
 
-    for i in range(10):
-        c = 0
-        vis = False
-
-        for j in sec:
-            if j == i:
-                if vis:
-                    freq[i][c] = freq[i].get(c, 0) + 1
-                c = 0
-                vis = True
-            else:
-                if vis: c += 1
-
-    return freq
-
-def get_fo(freq):
-    huecos = set()
-    fo = {}
-    for i in range(10):
-        huecos.update(freq[i].keys())
-    
-    for i in sorted(huecos):
-        fo[i] = sum(freq[j].get(i, 0) for j in range(10))
-    
-    return fo
+            for i in range(len(pos) - 1):
+                c = pos[i+1] - pos[i] - 1
+                if c < 100:
+                    res[c][digito] += 1
+                
+    return res
 
 def prueba_huecos_digitos(numbers):
-    columnas = []
+    columnas = [[] for _ in range(6)]
 
     for i in range(len(numbers)):
-        row = []
-        digitos = [int(d) for d in str(numbers[i]) if d.isdigit()]
+        number = f"{numbers[i]:.6f}".replace("0.", "").replace(".", "")
+        for j in [int(k) for k in number]:
+            columnas[i%6].append(j)
 
-        for j in digitos[1:]:
-            row.append(j)
-        columnas.append(row)
-    
-    freq = calc_frecuencias(columnas)
-
-    fo = get_fo(freq)
-
-    fo1 = {i: 0 for i in range(7)}
-    fo1['>=7'] = 0
-
-    for i,j in fo.items():
-        if i <= 6:
-            fo1[i] += j
-        else:
-            fo1['>=7'] += j
-        
-    n = sum(fo1.values())
-    res = 0
-
+    res = calc_frecuencias(columnas)
+    fo = [0 for _ in range(8)]
+    # primeros numeros hasta el 6
     for i in range(7):
-        fe = n * (0.9 ** i)
-        res += (fo1[i] - fe) ** 2 / fe
+        fo[i] = sum(res[i])
+    # >= 7
+    for i in range(7, 100):
+        fo[7] += sum(res[i])
+
+    pe = [0.1, 0.09, 0.0810, 0.0729, 0.0656, 0.0590, 0.0531, 0.4783]
+    n = sum(fo)
+    fe = [i*n for i in pe]
+
+    fofe = [(fo[i] - fe[i])**2 / fe[i] for i in range(8)]
+
+    x2 = sum(fofe)
+    punto_rechazo = 14.07
     
-    fe = n * (0.9 ** 7)
-    res += (fo1['>=7'] - fe) ** 2 / fe
+    return x2 <= punto_rechazo
+
+def prueba_huecos_numeros(numbers, alpha, beta, prob, total_clases=20):
+    indices = [i for i, x in enumerate(numbers) if alpha <= x <= beta]
+    if len(indices) < 2:
+        return "Fallo (Insuficientes datos en rango)"
+    huecos = [indices[i+1] - indices[i] - 1 for i in range(len(indices)-1)]
+    total_huecos = len(huecos)
+    #Contar frecuencias observadas
+    observados = defaultdict(int)
+    max_idx = total_clases - 1
+    for h in huecos:
+        if h >= max_idx:
+            observados[max_idx] += 1
+        else:
+            observados[h] += 1
+    #Calcular Chi-Cuadrada
+    chi_square = 0.0
+    for k in range(total_clases):
+        obs = observados[k]
+        #Calcular frecuencia esperada: Total * Prob_Hueco(k)
+        if k == max_idx:
+            # Probabilidad acumulada para (>= k)
+            # P(Hueco >= k) = (1-p)^k
+            prop = pow(1 - prob, k)
+        else:
+            # P(Hueco = k) = p * (1-p)^k
+            prop = prob * pow(1 - prob, k)
+        esp = total_huecos * prop
+        # Evitar n/0
+        if esp > 0:
+            chi_square += ((obs - esp) ** 2) / esp
+    # Chi2(0.95, 19) ~= 30.144
+    valor_critico = 30.144
+    resultado = chi_square <= valor_critico
+    return f"{resultado} (Chi2: {chi_square:.2f}, Critico: {valor_critico})"
 
 def execute_tests():
     print("Java")
@@ -156,7 +167,7 @@ def execute_tests():
     print("\tPrueba de Varianza:", prueba_varianza(java_numbers, 1/12, 997229, 1002769))
     print("\tPrueba de Corridas:")
     print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos(java_numbers))
-    print("\tPrueba de Huecos con Numeros:")
+    print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(java_numbers, 0.5, 1.0, 0.5))
     print("\tPrueba de Poker:")
     print("\tPrueba de Series:")
 
@@ -169,7 +180,7 @@ def execute_tests():
     print("\tPrueba de Varianza:")
     print("\tPrueba de Corridas:")
     print("\tPrueba de Huecos con digitos:")
-    print("\tPrueba de Huecos con Numeros:")
+    print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(erlang_numbers, 0.5, 1.0, 0.5))
     print("\tPrueba de Poker:")
     print("\tPrueba de Series:")
 
@@ -181,8 +192,8 @@ def execute_tests():
     print("\tPrueba de Promedio:", prueba_promedios(python1_media, python1_alfa, python1_desviacion_estandar, python1_numbers))
     print("\tPrueba de Varianza:", prueba_varianza(python1_numbers, 1/12, 997229, 1002769))
     print("\tPrueba de Corridas:")
-    print("\tPrueba de Huecos con digitos:")
-    print("\tPrueba de Huecos con Numeros:")
+    print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos(python1_numbers))
+    print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(python1_numbers, 0.5, 1.0, 0.5))
     print("\tPrueba de Poker:")
     print("\tPrueba de Series:")
 
@@ -195,7 +206,7 @@ def execute_tests():
     print("\tPrueba de Varianza:", prueba_varianza(python2_numbers, 35/12, 997229, 1002769))
     print("\tPrueba de Corridas:")
     print("\tPrueba de Huecos con digitos:")
-    print("\tPrueba de Huecos con Numeros:")
+    print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(python2_numbers, 3, 3, 1/6))
     print("\tPrueba de Poker:")
     print("\tPrueba de Series:")
 
@@ -208,7 +219,7 @@ def execute_tests():
     print("\tPrueba de Varianza:", prueba_varianza(c1_numbers, 15/12, 997229, 1002769))
     print("\tPrueba de Corridas:")
     print("\tPrueba de Huecos con digitos:")
-    print("\tPrueba de Huecos con Numeros:")
+    print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(c1_numbers, 2, 2, 0.25))
     print("\tPrueba de Poker:")
     print("\tPrueba de Series:")
 
@@ -221,7 +232,7 @@ def execute_tests():
     print("\tPrueba de Varianza:", prueba_varianza(c2_numbers, 63/12, 997229, 1002769))
     print("\tPrueba de Corridas:")
     print("\tPrueba de Huecos con digitos:")
-    print("\tPrueba de Huecos con Numeros:")
+    print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(c2_numbers, 5, 5, 1/8))
     print("\tPrueba de Poker:")
     print("\tPrueba de Series:")
 
@@ -234,7 +245,7 @@ def execute_tests():
     print("\tPrueba de Varianza:")
     print("\tPrueba de Corridas:")
     print("\tPrueba de Huecos con digitos:")
-    print("\tPrueba de Huecos con Numeros:")
+    print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(scheme_numbers, 10, 10, 0.05))
     print("\tPrueba de Poker:")
     print("\tPrueba de Series:")
 
@@ -246,8 +257,8 @@ def execute_tests():
     print("\tPrueba de Promedio:", prueba_promedios(rust_media, rust_alfa, rust_desviacion_estandar, rust_numbers))
     print("\tPrueba de Varianza:", prueba_varianza(rust_numbers, 1/12, 997229, 1002769))
     print("\tPrueba de Corridas:")
-    print("\tPrueba de Huecos con digitos:")
-    print("\tPrueba de Huecos con Numeros:")
+    print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos(rust_numbers))
+    print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(rust_numbers, 0.5, 1.0, 0.5))
     print("\tPrueba de Poker:")
     print("\tPrueba de Series:")
 

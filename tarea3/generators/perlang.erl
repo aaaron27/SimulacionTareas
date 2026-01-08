@@ -1,4 +1,4 @@
--module(erlang).
+-module(perlang).
 -export([main/0]).
 
 main() ->
@@ -8,8 +8,10 @@ main() ->
     init:stop().
 
 generate(0, _) -> ok;
+generate(1, File) ->
+    Num = rand:uniform(),
+    io:format(File, "~.10f", [Num]);
 generate(N, File) ->
-    % rand:uniform() genera un float entre 0.0 y 1.0
     Num = rand:uniform(),
     io:format(File, "~.10f~n", [Num]),
     generate(N - 1, File).
