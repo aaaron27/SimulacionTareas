@@ -80,6 +80,19 @@ def prueba_varianza(numbers, varianza, l_inf, l_sup):
     x2 = (len(numbers) - 1) * calc_varianza_muestral(numbers) / varianza
     return l_inf <= x2 <= l_sup
 
+def calc_frecuencias_enteros(sec, simbolos, max_hueco=100):
+    res = [[0 for _ in simbolos] for _ in range(max_hueco)]
+
+    for idx, simbolo in enumerate(simbolos):
+        pos = [i for i, x in enumerate(sec) if x == simbolo]
+
+        for i in range(len(pos) - 1):
+            c = pos[i+1] - pos[i] - 1
+            if c < max_hueco:
+                res[c][idx] += 1
+
+    return res
+
 def calc_frecuencias(listas):
     res = [[0 for _ in range(10)] for _ in range(100)]
 
@@ -120,6 +133,32 @@ def prueba_huecos_digitos(numbers):
     x2 = sum(fofe)
     punto_rechazo = 14.07
     
+    return x2 <= punto_rechazo
+
+def prueba_huecos_digitos_enteros(numbers, simbolos):
+    m = len(simbolos)
+
+    res = calc_frecuencias_enteros(numbers, simbolos)
+
+    fo = [0]*8
+    for i in range(7):
+        fo[i] = sum(res[i])
+    for i in range(7, len(res)):
+        fo[7] += sum(res[i])
+
+    p = 1/m
+    q = 1 - p
+
+    pe = [q**i * p for i in range(7)]
+    pe.append(q**7)   # >=7
+
+    n = sum(fo)
+    fe = [n * pe[i] for i in range(8)]
+
+    x2 = sum((fo[i] - fe[i])**2 / fe[i] for i in range(8))
+
+    punto_rechazo = 14.07
+    print(x2)
     return x2 <= punto_rechazo
 
 def prueba_huecos_numeros(numbers, alpha, beta, prob, total_clases=20):
@@ -205,7 +244,7 @@ def execute_tests():
     print("\tPrueba de Promedio:", prueba_promedios(python2_media, python2_alfa, python2_desviacion_estandar, python2_numbers))
     print("\tPrueba de Varianza:", prueba_varianza(python2_numbers, 35/12, 997229, 1002769))
     print("\tPrueba de Corridas:")
-    print("\tPrueba de Huecos con digitos:")
+    print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos_enteros(python2_numbers, [1,2,3,4,5,6]))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(python2_numbers, 3, 3, 1/6))
     print("\tPrueba de Poker:")
     print("\tPrueba de Series:")
@@ -218,7 +257,7 @@ def execute_tests():
     print("\tPrueba de Promedio:", prueba_promedios(c_media, c_alfa, c_desviacion_estandar, c1_numbers))
     print("\tPrueba de Varianza:", prueba_varianza(c1_numbers, 15/12, 997229, 1002769))
     print("\tPrueba de Corridas:")
-    print("\tPrueba de Huecos con digitos:")
+    print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos_enteros(c1_numbers, [1,2,3,4]))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(c1_numbers, 2, 2, 0.25))
     print("\tPrueba de Poker:")
     print("\tPrueba de Series:")
@@ -231,7 +270,7 @@ def execute_tests():
     print("\tPrueba de Promedio:", prueba_promedios(c2_media, c2_alfa, c2_desviacion_estandar, c2_numbers))
     print("\tPrueba de Varianza:", prueba_varianza(c2_numbers, 63/12, 997229, 1002769))
     print("\tPrueba de Corridas:")
-    print("\tPrueba de Huecos con digitos:")
+    print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos_enteros(c2_numbers, [1,2,3,4,5,6,7,8]))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(c2_numbers, 5, 5, 1/8))
     print("\tPrueba de Poker:")
     print("\tPrueba de Series:")
@@ -244,7 +283,7 @@ def execute_tests():
     print("\tPrueba de Promedio:")
     print("\tPrueba de Varianza:")
     print("\tPrueba de Corridas:")
-    print("\tPrueba de Huecos con digitos:")
+    print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos_enteros(scheme_numbers, [i for i in range(1, 21)]))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(scheme_numbers, 10, 10, 0.05))
     print("\tPrueba de Poker:")
     print("\tPrueba de Series:")
