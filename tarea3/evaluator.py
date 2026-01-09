@@ -157,7 +157,7 @@ def calc_frecuencias(listas):
                 
     return res
 
-def prueba_huecos_digitos(numbers):
+def prueba_huecos_digitos_continuos(numbers):
     columnas = [[] for _ in range(6)]
 
     for i in range(len(numbers)):
@@ -350,7 +350,7 @@ def execute_tests():
     print("\tPrueba de Promedio:", prueba_promedios(java_media, java_alfa, java_desviacion_estandar, java_numbers, java_media_observada))
     print("\tPrueba de Varianza:", prueba_varianza(java_numbers, 1/12, 997229, 1002769, java_varianza_observada))
     print("\tPrueba de Corridas:", prueba_corridas_continuos(java_numbers))
-    print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos(java_numbers))
+    print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos_continuos(java_numbers))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(java_numbers, 0.5, 1.0, 0.5))
     print("\tPrueba de Poker:", prueba_poker(java_numbers))
     print("\tPrueba de Series:")
@@ -367,7 +367,7 @@ def execute_tests():
     print("\tPrueba de Promedio:", prueba_promedios(erlang_media, erlang_alfa, erlang_desviacion_estandar, erlang_numbers, erlang_media_observada))
     print("\tPrueba de Varianza:", prueba_varianza(erlang_numbers, 1/12, 997228, 1002770, erlang_varianza_observada))
     print("\tPrueba de Corridas:", prueba_corridas_continuos(erlang_numbers))
-    print("\tPrueba de Huecos con digitos:")
+    print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos_continuos(erlang_numbers))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(erlang_numbers, 0.5, 1.0, 0.5))
     print("\tPrueba de Poker:", prueba_poker(erlang_numbers))
     print("\tPrueba de Series:")
@@ -384,7 +384,7 @@ def execute_tests():
     print("\tPrueba de Promedio:", prueba_promedios(python1_media, python1_alfa, python1_desviacion_estandar, python1_numbers, python1_media_observada))
     print("\tPrueba de Varianza:", prueba_varianza(python1_numbers, 1/12, 997229, 1002769, python1_varianza_observada))
     print("\tPrueba de Corridas:", prueba_corridas_continuos(python1_numbers))
-    print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos(python1_numbers))
+    print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos_continuos(python1_numbers))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(python1_numbers, 0.5, 1.0, 0.5))
     print("\tPrueba de Poker:", prueba_poker(python1_numbers))
     print("\tPrueba de Series:")
@@ -469,7 +469,7 @@ def execute_tests():
     print("\tPrueba de Promedio:", prueba_promedios(rust_media, rust_alfa, rust_desviacion_estandar, rust_numbers, rust_media_observada))
     print("\tPrueba de Varianza:", prueba_varianza(rust_numbers, 1/12, 997229, 1002769, rust_varianza_observada))
     print("\tPrueba de Corridas:", prueba_corridas_continuos(rust_numbers))
-    print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos(rust_numbers))
+    print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos_continuos(rust_numbers))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(rust_numbers, 0.5, 1.0, 0.5))
     print("\tPrueba de Poker:", prueba_poker(rust_numbers))
     print("\tPrueba de Series:") 
