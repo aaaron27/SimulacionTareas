@@ -1,4 +1,4 @@
-from math import sqrt
+from math import sqrt, comb
 from collections import defaultdict, Counter
 
 JAVA_PATH = "./data/Java.txt"
@@ -181,7 +181,7 @@ def prueba_huecos_digitos_continuos(numbers):
 
     print("\n\tHuecos | fo | pe | fe | (fo-fe) | (fo-fe)^2 | (fo-fe)^2/2")
     for i in range(8):
-        print(f"\t{i} & {fo[i]} & {pe[i]} & {round(fe[i],2)} & {round(fo[i] - fe[i],2)} & {round((fo[i] - fe[i])**2, 2)} & {round((fo[i] - fe[i])**2 / fe[i], 2)} \\\\")
+        print(f"\t{i} | {fo[i]} | {pe[i]} | {round(fe[i],2)} | {round(fo[i] - fe[i],2)} | {round((fo[i] - fe[i])**2, 2)} | {round((fo[i] - fe[i])**2 / fe[i], 2)} \\\\")
     print()
     
     print("\tx^2 =", x2)
@@ -219,7 +219,7 @@ def prueba_huecos_digitos_discretos(numbers, simbolos):
 
     print("\n\tHuecos | fo | pe | fe | (fo-fe) | (fo-fe)^2 | (fo-fe)^2/2")
     for i in range(8):
-        print(f"\t{i} & {fo[i]} & {round(pe[i],2)} & {fe[i]} & {round(fo[i] - fe[i],2)} & {round((fo[i] - fe[i])**2, 2)} & {round((fo[i] - fe[i])**2 / fe[i], 2)} \\\\")
+        print(f"\t{i} | {fo[i]} | {round(pe[i],2)} | {fe[i]} | {round(fo[i] - fe[i],2)} | {round((fo[i] - fe[i])**2, 2)} | {round((fo[i] - fe[i])**2 / fe[i], 2)} \\\\")
     print()
 
     print("\tx^2 =", x2)
@@ -227,44 +227,65 @@ def prueba_huecos_digitos_discretos(numbers, simbolos):
     punto_rechazo = 14.07
     return x2 <= punto_rechazo
 
-def prueba_huecos_numeros(numbers, alpha, beta, prob, total_clases=20):
+
+def prueba_huecos_numeros(numbers, alpha, beta, prob):
     indices = [i for i, x in enumerate(numbers) if alpha <= x <= beta]
     if len(indices) < 2:
         return "Fallo (Insuficientes datos en rango)"
+
     huecos = [indices[i+1] - indices[i] - 1 for i in range(len(indices)-1)]
     total_huecos = len(huecos)
-    #Contar frecuencias observadas
+
+    # Clases: 0,1,2,3,4,5,6, >=7
     observados = defaultdict(int)
-    max_idx = total_clases - 1
+    corte = 7
+
     for h in huecos:
-        if h >= max_idx:
-            observados[max_idx] += 1
+        if h >= corte:
+            observados[corte] += 1
         else:
             observados[h] += 1
-    #Calcular Chi-Cuadrada
+
+    # Chi-cuadrada
     chi_square = 0.0
-    for k in range(total_clases):
+    for k in range(corte + 1):  # 0..7
         obs = observados[k]
-        #Calcular frecuencia esperada: Total * Prob_Hueco(k)
-        if k == max_idx:
-            # Probabilidad acumulada para (>= k)
-            # P(Hueco >= k) = (1-p)^k
+
+        if k == corte:
+            # P(H >= 7) = (1-p)^7
             prop = pow(1 - prob, k)
         else:
-            # P(Hueco = k) = p * (1-p)^k
+            # P(H = k) = p(1-p)^k
             prop = prob * pow(1 - prob, k)
+
         esp = total_huecos * prop
-        # Evitar n/0
+
         if esp > 0:
-            chi_square += ((obs - esp) ** 2) / esp
-    # Chi2(0.95, 19) ~= 30.144
-    valor_critico = 30.144
+            ay = ((obs - esp) ** 2) / esp
+            chi_square += ay
+
+    # gl = 8 - 1 = 7
+    valor_critico = 14.067  # Chi2(0.95,7)
+
     resultado = chi_square <= valor_critico
     return f"{resultado} (Chi2: {chi_square:.2f}, Critico: {valor_critico})"
 
-def prueba_poker(numbers, is_int=False, max_val=1):
+def prueba_poker(numbers, is_int=False, m=10):
+    if is_int:
+        total = m*m*m*m*m
+        probs = [
+            m*(m-1)*(m-2)*(m-3)*(m-4) / total,
+            m*comb(5,2)*(m-1)*(m-2)*(m-3) / total,
+            comb(m,2)*comb(5,2)*comb(3,2)*(m-2) / total,
+            m*comb(5,3)*(m-1)*(m-2) / total,
+            m*comb(5,3)*(m-1) / total,
+            m*comb(5,4)*(m-1) / total,
+            m / total
+        ]
+    else:
+        probs = [0.3024, 0.5040, 0.1080, 0.0720, 0.0090, 0.0045, 0.0001]
 
-    probs = [0.3024, 0.5040, 0.1080, 0.0720, 0.0090, 0.0045, 0.0001]
+
     nombres = ["Dif", "Par", "2Par", "Trio", "Full", "Poker", "Quint"]
 
     conteos = [0] * 7 # para las 7 categorias
@@ -366,12 +387,13 @@ def prueba_series(numbers, is_int=False, m=10, k=5):
                 obs = conteos[(i, j)]
                 chi_square += ((obs - esperado) ** 2) / esperado
 
-        # Valor crítico
+        # Valor critico
         # gl = k^2 - 1 → para k=5 → 24
         valor_critico = 36.415
 
         resultado = chi_square <= valor_critico
         return f"{resultado} (Chi2: {chi_square:.2f}  Critico: {valor_critico})"
+
 
 def execute_tests():
     print("Java")
@@ -389,7 +411,7 @@ def execute_tests():
     print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos_continuos(java_numbers))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(java_numbers, 0.5, 1.0, 0.5))
     print("\tPrueba de Poker:", prueba_poker(java_numbers))
-    print("\tPrueba de Series:")
+    print("\tPrueba de Series:", prueba_series(java_numbers))
 
     print("Erlang")
     erlang_media = 0.5
@@ -406,7 +428,7 @@ def execute_tests():
     print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos_continuos(erlang_numbers))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(erlang_numbers, 0.5, 1.0, 0.5))
     print("\tPrueba de Poker:", prueba_poker(erlang_numbers))
-    print("\tPrueba de Series:")
+    print("\tPrueba de Series:", prueba_series(erlang_numbers))
 
     print("Python")
     python1_media = 0.5
@@ -423,7 +445,7 @@ def execute_tests():
     print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos_continuos(python1_numbers))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(python1_numbers, 0.5, 1.0, 0.5))
     print("\tPrueba de Poker:", prueba_poker(python1_numbers))
-    print("\tPrueba de Series:")
+    print("\tPrueba de Series:", prueba_series(python1_numbers))
 
     print("Python 2")
     python2_media = 3.5
@@ -439,8 +461,8 @@ def execute_tests():
     print("\tPrueba de Corridas:", prueba_corridas_discretos(python2_numbers))
     print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos_discretos(python2_numbers, [i for i in range(1,7)]))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(python2_numbers, 3, 3, 1/6))
-    print("\tPrueba de Poker:", prueba_poker(python2_numbers, is_int=True, max_val=6))
-    print("\tPrueba de Series:")
+    print("\tPrueba de Poker:", prueba_poker(python2_numbers, is_int=True, m=6))
+    print("\tPrueba de Series:", prueba_series(python2_numbers, is_int=True, m=6))
 
     print("C")
     c_media = 2.5
@@ -454,10 +476,10 @@ def execute_tests():
     print("\tPrueba de Promedio:", prueba_promedios(c_media, c_alfa, c_desviacion_estandar, c1_numbers, c1_media_observada))
     print("\tPrueba de Varianza:", prueba_varianza(c1_numbers, 15/12, 997229, 1002769, c1_varianza_observada))
     print("\tPrueba de Corridas:", prueba_corridas_discretos(c1_numbers))
-    print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos_discretos(c1_numbers, [1,2,3,4]))
+    print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos_discretos(c1_numbers, [1,642,3,4]))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(c1_numbers, 2, 2, 0.25))
-    print("\tPrueba de Poker:", prueba_poker(c1_numbers, is_int=True, max_val=4))
-    print("\tPrueba de Series:")
+    print("\tPrueba de Poker:", prueba_poker(c1_numbers, is_int=True, m=4))
+    print("\tPrueba de Series:", prueba_series(c1_numbers, is_int=True, m=4))
 
     print("C2")
     c2_media = 4.5
@@ -473,8 +495,8 @@ def execute_tests():
     print("\tPrueba de Corridas:", prueba_corridas_discretos(c2_numbers))
     print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos_discretos(c2_numbers, [1,2,3,4,5,6,7,8]))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(c2_numbers, 5, 5, 1/8))
-    print("\tPrueba de Poker:", prueba_poker(c2_numbers, is_int=True, max_val=8))
-    print("\tPrueba de Series:")
+    print("\tPrueba de Poker:", prueba_poker(c2_numbers, is_int=True, m=8))
+    print("\tPrueba de Series:", prueba_series(c2_numbers, is_int=True, m=8))
 
     print("Scheme")
     scheme_media = 10.5
@@ -490,8 +512,8 @@ def execute_tests():
     print("\tPrueba de Corridas:", prueba_corridas_discretos(scheme_numbers))
     print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos_discretos(scheme_numbers, [i for i in range(1, 21)]))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(scheme_numbers, 10, 10, 0.05))
-    print("\tPrueba de Poker:", prueba_poker(scheme_numbers, is_int=True, max_val=20))
-    print("\tPrueba de Series:")
+    print("\tPrueba de Poker:", prueba_poker(scheme_numbers, is_int=True, m=10))
+    print("\tPrueba de Series:", prueba_series(scheme_numbers, is_int=True, m=20))
 
     print("Rust")
     rust_media = 0.5
@@ -508,7 +530,7 @@ def execute_tests():
     print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos_continuos(rust_numbers))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(rust_numbers, 0.5, 1.0, 0.5))
     print("\tPrueba de Poker:", prueba_poker(rust_numbers))
-    print("\tPrueba de Series:") 
+    print("\tPrueba de Series:", prueba_series(rust_numbers))
 
 def main():
     init_numbers()
