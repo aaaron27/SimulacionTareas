@@ -66,6 +66,7 @@ def calc_limites_promedios(media, z, desviacion_estandar, total):
 
 def prueba_promedios(media, alfa, desviacion_estandar, numbers, media_observada):
     l_inf, l_sup = calc_limites_promedios(media, alfa, desviacion_estandar, len(numbers))
+    print(l_inf, l_sup)
     return l_inf <= media_observada <= l_sup
 
 def calc_varianza_muestral(numbers, media_observada):
@@ -76,6 +77,7 @@ def calc_varianza_muestral(numbers, media_observada):
 
 def prueba_varianza(numbers, varianza, l_inf, l_sup, varianza_observada):
     x2 = (len(numbers) - 1) * varianza_observada / varianza
+    print("x2_0 =", x2)
     return l_inf <= x2 <= l_sup
 
 def calc_corridas(numbers):
@@ -121,8 +123,6 @@ def prueba_corridas_discretos(numbers):
     esperanza = (2 * n1 * n2) / n + 1
     var = (2 * n1 * n2 * (2 * n1 * n2 - n)) / (n**2 * (n-1))
     z0 = (c - esperanza) / sqrt(var)
-
-    print(f"\tz0 = {z0}")
 
     return -1.96 <= z0 <= 1.96
 
@@ -224,6 +224,8 @@ def prueba_huecos_digitos_discretos(numbers, simbolos):
 
     print("\tx^2 =", x2)
 
+    # grados = 8 - 1
+    # 0.05
     punto_rechazo = 14.07
     return x2 <= punto_rechazo
 
