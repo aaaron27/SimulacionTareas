@@ -64,19 +64,18 @@ def calc_limites_promedios(media, z, desviacion_estandar, total):
 
     return (l_inf, l_sup)
 
-def prueba_promedios(media, alfa, desviacion_estandar, numbers):
+def prueba_promedios(media, alfa, desviacion_estandar, numbers, media_observada):
     l_inf, l_sup = calc_limites_promedios(media, alfa, desviacion_estandar, len(numbers))
-    return l_inf <= sum(numbers)/len(numbers) <= l_sup
+    return l_inf <= media_observada <= l_sup
 
-def calc_varianza_muestral(numbers):
-    promedio_numbers = sum(numbers) / len(numbers)
+def calc_varianza_muestral(numbers, media_observada):
     res = 0
     for i in numbers:
-        res += (i - promedio_numbers)**2
+        res += (i - media_observada)**2
     return res / (len(numbers) - 1)
 
-def prueba_varianza(numbers, varianza, l_inf, l_sup):
-    x2 = (len(numbers) - 1) * calc_varianza_muestral(numbers) / varianza
+def prueba_varianza(numbers, varianza, l_inf, l_sup, varianza_observada):
+    x2 = (len(numbers) - 1) * varianza_observada / varianza
     return l_inf <= x2 <= l_sup
 
 def calc_corridas(numbers):
@@ -98,14 +97,37 @@ def calc_corridas(numbers):
             corridas += 1
 
     return corridas, len(signos)
-def prueba_corridas(numbers):
+
+def prueba_corridas_continuos(numbers):
     a,n = calc_corridas(numbers)
 
     esperanza = (2 * n - 1) / 3
     desviacion =  sqrt((16 * n - 29) / 90)
     z0 =  (a - esperanza) / desviacion
 
-    print(z0)
+    print(f"\tz0 = {z0}")
+    return -1.96 <= z0 <= 1.96
+
+def prueba_corridas_discretos(numbers):
+    n = 1000000
+
+    media = sum(numbers) / n
+    simbolos = ['a' if i >= media else 'b' for i in numbers]
+
+    c = 1
+    for i in range(1, n):
+        if simbolos[i] != simbolos[i-1]:
+            c += 1
+        
+    n1 = simbolos.count('a')
+    n2 = simbolos.count('b')
+
+    esperanza = (2 * n1 * n2) / n + 1
+    var = (2 * n1 * n2 * (2 * n1 * n2 - n)) / (n**2 * (n-1))
+    z0 = (c - esperanza) / sqrt(var)
+
+    print(f"\tz0 = {z0}")
+
     return -1.96 <= z0 <= 1.96
 
 def calc_frecuencias_enteros(sec, simbolos, max_hueco=100):
@@ -160,7 +182,14 @@ def prueba_huecos_digitos(numbers):
 
     x2 = sum(fofe)
     punto_rechazo = 14.07
+
+    print("\n\tHuecos | fo | pe | fe | (fo-fe) | (fo-fe)^2 | (fo-fe)^2/2")
+    for i in range(8):
+        print(f"\t{i} & {fo[i]} & {pe[i]} & {fe[i]} & {round(fo[i] - fe[i],2)} & {round((fo[i] - fe[i])**2, 2)} & {round((fo[i] - fe[i])**2 / fe[i], 2)} \\\\")
+    print()
     
+    print("\tx^2 =", x2)
+
     return x2 <= punto_rechazo
 
 def prueba_huecos_digitos_enteros(numbers, simbolos):
@@ -184,6 +213,13 @@ def prueba_huecos_digitos_enteros(numbers, simbolos):
     fe = [n * pe[i] for i in range(8)]
 
     x2 = sum((fo[i] - fe[i])**2 / fe[i] for i in range(8))
+
+    print("\n\tHuecos | fo | pe | fe | (fo-fe) | (fo-fe)^2 | (fo-fe)^2/2")
+    for i in range(8):
+        print(f"\t{i} & {fo[i]} & {pe[i]} & {fe[i]} & {round(fo[i] - fe[i],2)} & {round((fo[i] - fe[i])**2, 2)} & {round((fo[i] - fe[i])**2 / fe[i], 2)} \\\\")
+    print()
+
+    print("\tx^2 =", x2)
 
     punto_rechazo = 14.07
     return x2 <= punto_rechazo
@@ -306,10 +342,14 @@ def execute_tests():
     java_media = 0.5
     java_alfa = 1.96
     java_desviacion_estandar = sqrt(1/12)
+    java_media_observada = sum(java_numbers)/len(java_numbers)
+    java_varianza_observada = calc_varianza_muestral(java_numbers, java_media_observada)
 
-    print("\tPrueba de Promedio:", prueba_promedios(java_media, java_alfa, java_desviacion_estandar, java_numbers))
-    print("\tPrueba de Varianza:", prueba_varianza(java_numbers, 1/12, 997229, 1002769))
-    print("\tPrueba de Corridas:", prueba_corridas(java_numbers))
+    print("\tMedia observada:", java_media_observada)
+    print("\tVarianza observada:", java_varianza_observada)
+    print("\tPrueba de Promedio:", prueba_promedios(java_media, java_alfa, java_desviacion_estandar, java_numbers, java_media_observada))
+    print("\tPrueba de Varianza:", prueba_varianza(java_numbers, 1/12, 997229, 1002769, java_varianza_observada))
+    print("\tPrueba de Corridas:", prueba_corridas_continuos(java_numbers))
     print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos(java_numbers))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(java_numbers, 0.5, 1.0, 0.5))
     print("\tPrueba de Poker:", prueba_poker(java_numbers))
@@ -319,10 +359,14 @@ def execute_tests():
     erlang_media = 0.5
     erlang_alfa = 1.96
     erlang_desviacion_estandar = sqrt(1/12)
+    erlang_media_observada = sum(erlang_numbers)/len(erlang_numbers)
+    erlang_varianza_observada = calc_varianza_muestral(erlang_numbers, erlang_media_observada)
 
-    print("\tPrueba de Promedio:", prueba_promedios(erlang_media, erlang_alfa, erlang_desviacion_estandar, erlang_numbers))
-    print("\tPrueba de Varianza:", prueba_varianza(erlang_numbers, 1/12, 997228, 1002770))
-    print("\tPrueba de Corridas:", prueba_corridas(erlang_numbers))
+    print("\tMedia observada:", erlang_media_observada)
+    print("\tVarianza observada:", erlang_varianza_observada)
+    print("\tPrueba de Promedio:", prueba_promedios(erlang_media, erlang_alfa, erlang_desviacion_estandar, erlang_numbers, erlang_media_observada))
+    print("\tPrueba de Varianza:", prueba_varianza(erlang_numbers, 1/12, 997228, 1002770, erlang_varianza_observada))
+    print("\tPrueba de Corridas:", prueba_corridas_continuos(erlang_numbers))
     print("\tPrueba de Huecos con digitos:")
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(erlang_numbers, 0.5, 1.0, 0.5))
     print("\tPrueba de Poker:", prueba_poker(erlang_numbers))
@@ -332,10 +376,14 @@ def execute_tests():
     python1_media = 0.5
     python1_alfa = 1.96
     python1_desviacion_estandar = sqrt(1/12)
+    python1_media_observada = sum(python1_numbers)/len(python1_numbers)
+    python1_varianza_observada = calc_varianza_muestral(python1_numbers, python1_media_observada)
 
-    print("\tPrueba de Promedio:", prueba_promedios(python1_media, python1_alfa, python1_desviacion_estandar, python1_numbers))
-    print("\tPrueba de Varianza:", prueba_varianza(python1_numbers, 1/12, 997229, 1002769))
-    print("\tPrueba de Corridas:", prueba_corridas(python1_numbers))
+    print("\tMedia observada:", python1_media_observada)
+    print("\tVarianza observada:", python1_varianza_observada)
+    print("\tPrueba de Promedio:", prueba_promedios(python1_media, python1_alfa, python1_desviacion_estandar, python1_numbers, python1_media_observada))
+    print("\tPrueba de Varianza:", prueba_varianza(python1_numbers, 1/12, 997229, 1002769, python1_varianza_observada))
+    print("\tPrueba de Corridas:", prueba_corridas_continuos(python1_numbers))
     print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos(python1_numbers))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(python1_numbers, 0.5, 1.0, 0.5))
     print("\tPrueba de Poker:", prueba_poker(python1_numbers))
@@ -345,10 +393,14 @@ def execute_tests():
     python2_media = 3.5
     python2_alfa = 1.96
     python2_desviacion_estandar = sqrt(35/12)
+    python2_media_observada = sum(python2_numbers)/len(python2_numbers)
+    python2_varianza_observada = calc_varianza_muestral(python2_numbers, python2_media_observada)
 
-    print("\tPrueba de Promedio:", prueba_promedios(python2_media, python2_alfa, python2_desviacion_estandar, python2_numbers))
-    print("\tPrueba de Varianza:", prueba_varianza(python2_numbers, 35/12, 997229, 1002769))
-    print("\tPrueba de Corridas:", prueba_corridas(python2_numbers))
+    print("\tMedia observada:", python2_media_observada)
+    print("\tVarianza observada:", python2_varianza_observada)
+    print("\tPrueba de Promedio:", prueba_promedios(python2_media, python2_alfa, python2_desviacion_estandar, python2_numbers, python2_media_observada))
+    print("\tPrueba de Varianza:", prueba_varianza(python2_numbers, 35/12, 997229, 1002769, python2_varianza_observada))
+    print("\tPrueba de Corridas:", prueba_corridas_discretos(python2_numbers))
     print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos_enteros(python2_numbers, [1,2,3,4,5,6]))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(python2_numbers, 3, 3, 1/6))
     print("\tPrueba de Poker:", prueba_poker(python2_numbers, is_int=True, max_val=6))
@@ -358,10 +410,14 @@ def execute_tests():
     c_media = 2.5
     c_alfa = 1.96
     c_desviacion_estandar = sqrt(15/12)
+    c1_media_observada = sum(c1_numbers)/len(c1_numbers)
+    c1_varianza_observada = calc_varianza_muestral(c1_numbers, c1_media_observada)
 
-    print("\tPrueba de Promedio:", prueba_promedios(c_media, c_alfa, c_desviacion_estandar, c1_numbers))
-    print("\tPrueba de Varianza:", prueba_varianza(c1_numbers, 15/12, 997229, 1002769))
-    print("\tPrueba de Corridas:", prueba_corridas(c1_numbers))
+    print("\tMedia observada:", c1_media_observada)
+    print("\tVarianza observada:", c1_varianza_observada)
+    print("\tPrueba de Promedio:", prueba_promedios(c_media, c_alfa, c_desviacion_estandar, c1_numbers, c1_media_observada))
+    print("\tPrueba de Varianza:", prueba_varianza(c1_numbers, 15/12, 997229, 1002769, c1_varianza_observada))
+    print("\tPrueba de Corridas:", prueba_corridas_discretos(c1_numbers))
     print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos_enteros(c1_numbers, [1,2,3,4]))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(c1_numbers, 2, 2, 0.25))
     print("\tPrueba de Poker:", prueba_poker(c1_numbers, is_int=True, max_val=4))
@@ -371,10 +427,14 @@ def execute_tests():
     c2_media = 4.5
     c2_alfa = 1.96
     c2_desviacion_estandar = sqrt(63/12)
+    c2_media_observada = sum(c2_numbers)/len(c2_numbers)
+    c2_varianza_observada = calc_varianza_muestral(c2_numbers, c2_media_observada)
 
-    print("\tPrueba de Promedio:", prueba_promedios(c2_media, c2_alfa, c2_desviacion_estandar, c2_numbers))
-    print("\tPrueba de Varianza:", prueba_varianza(c2_numbers, 63/12, 997229, 1002769))
-    print("\tPrueba de Corridas:", prueba_corridas(c2_numbers))
+    print("\tMedia observada:", c2_media_observada)
+    print("\tVarianza observada:", c2_varianza_observada)
+    print("\tPrueba de Promedio:", prueba_promedios(c2_media, c2_alfa, c2_desviacion_estandar, c2_numbers, c2_media_observada))
+    print("\tPrueba de Varianza:", prueba_varianza(c2_numbers, 63/12, 997229, 1002769, c2_varianza_observada))
+    print("\tPrueba de Corridas:", prueba_corridas_discretos(c2_numbers))
     print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos_enteros(c2_numbers, [1,2,3,4,5,6,7,8]))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(c2_numbers, 5, 5, 1/8))
     print("\tPrueba de Poker:", prueba_poker(c2_numbers, is_int=True, max_val=8))
@@ -384,10 +444,14 @@ def execute_tests():
     scheme_media = 10.5
     scheme_alfa = 1.96
     scheme_desviacion_estandar = sqrt(399/12)
+    scheme_media_observada = sum(scheme_numbers)/len(scheme_numbers)
+    scheme_varianza_observada = calc_varianza_muestral(scheme_numbers, scheme_media_observada)
 
-    print("\tPrueba de Promedio:", prueba_promedios(scheme_media, scheme_alfa, scheme_desviacion_estandar, scheme_numbers))
-    print("\tPrueba de Varianza:", prueba_varianza(scheme_numbers, 399/12, 997228, 1002770))
-    print("\tPrueba de Corridas:", prueba_corridas(scheme_numbers))
+    print("\tMedia observada:", scheme_media_observada)
+    print("\tVarianza observada:", scheme_varianza_observada)
+    print("\tPrueba de Promedio:", prueba_promedios(scheme_media, scheme_alfa, scheme_desviacion_estandar, scheme_numbers, scheme_media_observada))
+    print("\tPrueba de Varianza:", prueba_varianza(scheme_numbers, 399/12, 997228, 1002770, scheme_varianza_observada))
+    print("\tPrueba de Corridas:", prueba_corridas_discretos(scheme_numbers))
     print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos_enteros2(scheme_numbers, [i for i in range(1, 21)]))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(scheme_numbers, 10, 10, 0.05))
     print("\tPrueba de Poker:", prueba_poker(scheme_numbers, is_int=True, max_val=20))
@@ -397,10 +461,14 @@ def execute_tests():
     rust_media = 0.5
     rust_alfa = 1.96
     rust_desviacion_estandar = sqrt(1/12)
+    rust_media_observada = sum(rust_numbers)/len(rust_numbers)
+    rust_varianza_observada = calc_varianza_muestral(rust_numbers, rust_media_observada)
 
-    print("\tPrueba de Promedio:", prueba_promedios(rust_media, rust_alfa, rust_desviacion_estandar, rust_numbers))
-    print("\tPrueba de Varianza:", prueba_varianza(rust_numbers, 1/12, 997229, 1002769))
-    print("\tPrueba de Corridas:", prueba_corridas(rust_numbers))
+    print("\tMedia observada:", rust_media_observada)
+    print("\tVarianza observada:", rust_varianza_observada)
+    print("\tPrueba de Promedio:", prueba_promedios(rust_media, rust_alfa, rust_desviacion_estandar, rust_numbers, rust_media_observada))
+    print("\tPrueba de Varianza:", prueba_varianza(rust_numbers, 1/12, 997229, 1002769, rust_varianza_observada))
+    print("\tPrueba de Corridas:", prueba_corridas_continuos(rust_numbers))
     print("\tPrueba de Huecos con digitos:", prueba_huecos_digitos(rust_numbers))
     print("\tPrueba de Huecos con Numeros:", prueba_huecos_numeros(rust_numbers, 0.5, 1.0, 0.5))
     print("\tPrueba de Poker:", prueba_poker(rust_numbers))
