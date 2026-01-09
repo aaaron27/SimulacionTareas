@@ -105,7 +105,7 @@ def prueba_corridas_continuos(numbers):
     return -1.96 <= z0 <= 1.96
 
 def prueba_corridas_discretos(numbers):
-    n = 1000000
+    n = len(numbers)
 
     media = sum(numbers) / n
     simbolos = ['a' if i >= media else 'b' for i in numbers]
