@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from kolmogorov import pruebas_ks
+from graficos_distribuciones import *
 
 M8_PATH = "./muestras/m8.txt"
 M13_PATH = "./muestras/m13.txt"
@@ -115,6 +116,11 @@ def main():
 
     for datos, nombre, discreta in muestras:
         pruebas_ks(datos, nombre, discreta)
+    
+    #grafico_normal(m8)
+    #grafico_exponencial(m16)
+    #grafico_exponencial(m13)
+    #grafico_poisson(m8)
 
 if __name__ == '__main__':
     main()

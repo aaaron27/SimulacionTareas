@@ -3,7 +3,6 @@ import pandas as pd
 from scipy import stats
 from math import sqrt
 from collections import Counter
-import matplotlib.pyplot as plt 
 
 def generador(numbers):
     n = len(numbers)
