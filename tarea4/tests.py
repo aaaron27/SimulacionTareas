@@ -1,7 +1,8 @@
 import scipy.stats as stats
+import matplotlib.pyplot as plt
 import numpy as np
 
-from kolmogorov import pruebas_ks, grafico_poisson
+from kolmogorov import pruebas_ks, grafico_normal
 
 M8_PATH = "./muestras/m8.txt"
 M13_PATH = "./muestras/m13.txt"
@@ -98,7 +99,6 @@ def prueba_chi_cuadrado(datos, nombre_muestra):
     print(f"  Chi2 Crít:   {valor_critico:.4f}")
     print(f"  P-Valor:     {p_valor}")
 
-
 def main():
     init_numbers()
     if not m8: return
@@ -112,10 +112,11 @@ def main():
 
     for datos, nombre, _ in muestras:
         prueba_chi_cuadrado(datos, nombre)
-    
+
     for datos, nombre, discreta in muestras:
         pruebas_ks(datos, nombre, discreta)
-        grafico_poisson(datos)
+    
+
 
 
 if __name__ == '__main__':
