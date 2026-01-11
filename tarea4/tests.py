@@ -113,9 +113,8 @@ def main():
     for datos, nombre, _ in muestras:
         prueba_chi_cuadrado(datos, nombre)
 
-    # for datos, nombre, discreta in muestras:
-    #     pruebas_ks(datos, nombre, discreta)
-    pruebas_ks(m15, 'm15', True)
+    for datos, nombre, discreta in muestras:
+        pruebas_ks(datos, nombre, discreta)
 
 if __name__ == '__main__':
     main()
