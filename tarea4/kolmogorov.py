@@ -98,42 +98,32 @@ def ks_uniforme(numbers, a=None, b=None, bins=None):
     
     return d, tabla, a, b
 
-def ks_normal(numbers, bins=None):
+def ks_poisson_discreta(numbers):
     n = len(numbers)
-    
-    if bins is None:
-        bins = int(np.sqrt(n))
-    
-    mu = np.mean(numbers)
-    sigma = np.std(numbers, ddof=1)
-    
-    min_val = min(numbers)
-    max_val = max(numbers)
-    amplitud = (max_val - min_val) / bins
-    
-    bordes = [min_val + i * amplitud for i in range(bins + 1)]
-    bordes[-1] = max_val + 0.01
-    
-    fo, _ = np.histogram(numbers, bins=bordes)
+    lambda_ = np.mean(numbers)
+
+    fo_dict = Counter(numbers)
+    values = np.array(sorted(fo_dict.keys()))
+
+    fo = np.array([fo_dict[i] for i in values])
     foa = np.cumsum(fo)
     poa = foa / n
-    
-    pea = [stats.norm.cdf(bordes[i+1], mu, sigma) for i in range(len(bordes)-1)]
-    
-    diferencias = [abs(poa[i] - pea[i]) for i in range(len(poa))]
-    d = max(diferencias)
-    
+
+    pea = stats.poisson.cdf(values, lambda_)
+
+    diff = np.abs(poa - pea)
+    d = diff.max()
+
     tabla = pd.DataFrame({
-        'No.': range(1, bins + 1),
-        'Intervalo': [f"[{bordes[i]:7.2f}, {bordes[i+1]:7.2f})" for i in range(len(bordes)-1)],
+        'x': values,
         'fo': fo,
         'foa': foa,
         'poa': poa.round(4),
-        'pea': [round(x, 4) for x in pea],
-        '|poa-pea|': [round(x, 4) for x in diferencias]
+        'pea': pea.round(4),
+        '|poa-pea|': diff.round(4)
     })
-    
-    return d, tabla, mu, sigma
+
+    return d, tabla, lambda_
 
 def ks_poisson(numbers, bins=None):
     n = len(numbers)
@@ -171,7 +161,7 @@ def ks_poisson(numbers, bins=None):
     
     return d, tabla, lambda_
 
-def pruebas_ks(numbers, muestra_id):
+def pruebas_ks(numbers, muestra_id, discreta):
     print("=" * 70)
     print(f"Pruebas Kolmogorov-Smirnov - {muestra_id}")
     print("=" * 70)
@@ -188,16 +178,6 @@ def pruebas_ks(numbers, muestra_id):
     
     resultados = {}
     
-    print("-" * 70)
-    print("1. Distribucion normal")
-    print("-" * 70)
-    d, tabla, mu, sigma = ks_normal(numbers)
-    print(f"Parámetros: μ = {mu:.4f}, σ = {sigma:.4f}")
-    print(f"D = {d:.4f}")
-    print(f"Acepta H0: {d < critico} (d {'<' if d < critico else '>='} {critico:.4f})")
-    print("\nTabla de intervalos:")
-    print(tabla.to_string(index=False))
-    resultados['normal'] = {'d': d, 'acepta': d < critico}
     
     print("\n" + "-" * 70)
     print("2. Distribucion exponencial")
@@ -207,10 +187,9 @@ def pruebas_ks(numbers, muestra_id):
     print(f"D = {d:.4f}")
     print(f"Acepta H0: {d < critico} (d {'<' if d < critico else '>='} {critico:.4f})")
     print("\nTabla de intervalos:")
-    print(tabla.to_string(index=False))
+    #print(tabla.to_string(index=False))
     resultados['exponencial'] = {'d': d, 'acepta': d < critico}
     
-    # 3. UNIFORME
     print("\n" + "-" * 70)
     print("3. Distribucion Uniforme")
     print("-" * 70)
@@ -219,18 +198,18 @@ def pruebas_ks(numbers, muestra_id):
     print(f"D = {d:.4f}")
     print(f"Acepta H0: {d < critico} (d {'<' if d < critico else '>='} {critico:.4f})")
     print("\nTabla de intervalos:")
-    print(tabla.to_string(index=False))
+    #print(tabla.to_string(index=False))
     resultados['uniforme'] = {'d': d, 'acepta': d < critico}
     
     print("\n" + "-" * 70)
     print("4. Distribucion Poisson")
     print("-" * 70)
-    d, tabla, lambda_ = ks_poisson(numbers)
+    d, tabla, lambda_ = ks_poisson_discreta(numbers) if discreta else ks_poisson(numbers)
     print(f"Parámetro: λ = {lambda_:.4f}")
     print(f"D = {d:.4f}")
     print(f"Acepta H0: {d < critico} (d {'<' if d < critico else '>='} {critico:.4f})")
     print("\nTabla de intervalos:")
-    print(tabla.to_string(index=False))
+    #print(tabla.to_string(index=False))
     resultados['poisson'] = {'d': d, 'acepta': d < critico}
     
     print("\n" + "-" * 70)
@@ -240,7 +219,7 @@ def pruebas_ks(numbers, muestra_id):
     print(f"D = {d}")
     print(f"Acepta H0: {d < critico} (d {'<' if d < critico else '>='} {critico:.4f})")
     print("\nTabla de intervalos:")
-    print(tabla.to_string(index=False))
+    #print(tabla.to_string(index=False))
     resultados['generador'] = {'d': d, 'acepta': d < critico}
     
     print("\n" + "=" * 70)

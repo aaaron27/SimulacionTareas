@@ -104,10 +104,10 @@ def main():
     if not m8: return
 
     muestras = [
-        (m15, "M15", True),  # Uniforme
-        (m16, "M16", True),  # Exponencial
-        (m8, "M8", True),  # Normal
-        (m13, "M13", False)  # Geometrica
+        (m15, "M15", False),  # Uniforme
+        (m16, "M16", False),  # Exponencial
+        (m8, "M8", False),  # Normal
+        (m13, "M13", True)  # Geometrica
     ]
 
     for datos, nombre, _ in muestras:
