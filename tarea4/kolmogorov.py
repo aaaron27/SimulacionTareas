@@ -60,6 +60,7 @@ def ks_exponencial(numbers, bins=None):
     return d, tabla, beta
 
 def ks_uniforme(numbers, a=None, b=None, bins=None):
+    numbers = np.asarray(numbers, dtype=float)
     n = len(numbers)
     
     if bins is None:
@@ -70,32 +71,31 @@ def ks_uniforme(numbers, a=None, b=None, bins=None):
     if b is None:
         b = max(numbers)
     
-    min_val = min(numbers)
-    max_val = max(numbers)
-    amplitud = (max_val - min_val) / bins
-    
-    bordes = [min_val + i * amplitud for i in range(bins + 1)]
-    bordes[-1] = max_val + 0.01
+    bordes = np.linspace(a, b, bins + 1)
     
     fo, _ = np.histogram(numbers, bins=bordes)
+
     foa = np.cumsum(fo)
     poa = foa / n
-    
-    pea = [(bordes[i+1] - a) / (b - a) for i in range(len(bordes)-1)]
-    
-    diferencias = [abs(poa[i] - pea[i]) for i in range(len(poa))]
-    d = max(diferencias)
-    
+
+    calc = b - a
+    pea = (bordes[1:] - a) / calc
+
+    diff = np.abs(poa - pea)
+    d = diff.max()
+
     tabla = pd.DataFrame({
-        'No.': range(1, bins + 1),
-        'Intervalo': [f"[{bordes[i]:7.2f}, {bordes[i+1]:7.2f})" for i in range(len(bordes)-1)],
+        'Intervalo': [
+            f"[{bordes[i]:.4f}, {bordes[i+1]:.4f})"
+            for i in range(bins)
+        ],
         'fo': fo,
         'foa': foa,
         'poa': poa.round(4),
-        'pea': [round(x, 4) for x in pea],
-        '|poa-pea|': [round(x, 4) for x in diferencias]
+        'pea': pea.round(4),
+        '|poa-pea|': diff.round(4)
     })
-    
+
     return d, tabla, a, b
 
 def ks_poisson_discreta(numbers):
