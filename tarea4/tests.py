@@ -2,7 +2,7 @@ import scipy.stats as stats
 import matplotlib.pyplot as plt
 import numpy as np
 
-from kolmogorov import pruebas_ks, grafico_normal
+from kolmogorov import pruebas_ks
 
 M8_PATH = "./muestras/m8.txt"
 M13_PATH = "./muestras/m13.txt"
@@ -104,20 +104,18 @@ def main():
     if not m8: return
 
     muestras = [
-        (m15, "M15", False),  # Uniforme
-        (m16, "M16", False),  # Exponencial
-        (m8, "M8", False),  # Normal
-        (m13, "M13", True)  # Geometrica
+        (m15, "M15", True),  # Uniforme
+        (m16, "M16", True),  # Exponencial
+        (m8, "M8", True),  # Normal
+        (m13, "M13", False)  # Geometrica
     ]
 
     for datos, nombre, _ in muestras:
         prueba_chi_cuadrado(datos, nombre)
 
-    for datos, nombre, discreta in muestras:
-        pruebas_ks(datos, nombre, discreta)
-    
-
-
+    # for datos, nombre, discreta in muestras:
+    #     pruebas_ks(datos, nombre, discreta)
+    pruebas_ks(m15, 'm15', True)
 
 if __name__ == '__main__':
     main()
