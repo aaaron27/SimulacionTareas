@@ -102,6 +102,8 @@ def prueba_chi_cuadrado(datos, nombre_muestra):
 def main():
     init_numbers()
     if not m8: return
+    pruebas_ks(m13, 'm13')
+
 
     muestras = [
         (m15, "M15"),  # Uniforme
