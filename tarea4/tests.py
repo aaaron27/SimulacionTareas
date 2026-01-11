@@ -1,3 +1,5 @@
+from kolmogorov import pruebas_ks
+
 M8_PATH = "./muestras/m8.txt"
 M13_PATH = "./muestras/m13.txt"
 M15_PATH = "./muestras/m15.txt"
@@ -25,6 +27,7 @@ def init_numbers():
 
 def main():
     init_numbers()
+    pruebas_ks(m13, 'm13')
 
 if __name__ == '__main__':
     main()
