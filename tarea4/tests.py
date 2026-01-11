@@ -34,8 +34,6 @@ def prueba_chi_cuadrado(datos, nombre_muestra):
     N = len(datos)
     nombre_lower = nombre_muestra.lower()
 
-    print(f"\n{'=' * 20} PROCESANDO {nombre_muestra} {'=' * 20}")
-
     if "m15" in nombre_lower:
         dist_nom = "Uniforme"
         a, b = np.min(datos), np.max(datos) - np.min(datos)
@@ -95,7 +93,7 @@ def prueba_chi_cuadrado(datos, nombre_muestra):
     valor_critico = stats.chi2.ppf(1 - alpha, gl)
     p_valor = 1 - stats.chi2.cdf(chi_total, gl)
 
-    print(f"RESUMEN {nombre_muestra}:")
+    print(f"RESUMEN CH2, {nombre_muestra}:")
     print(f"  Chi2 Calc:   {chi_total:.4f}")
     print(f"  Chi2 Crít:   {valor_critico:.4f}")
     print(f"  P-Valor:     {p_valor}")
