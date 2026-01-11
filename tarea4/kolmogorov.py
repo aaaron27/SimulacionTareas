@@ -1,6 +1,8 @@
 import numpy as np
 from scipy import stats
 from math import sqrt, exp
+from collections import Counter
+from itertools import accumulate
 
 def poisson(numbers: list):
     lambda_observado = np.mean(numbers)
@@ -41,7 +43,7 @@ def poisson(numbers: list):
     print("\tlambda:", lambda_observado)
     print("\tD:", d)
     print("\tValor critico:", valor_critico)
-    print("\tRechaza H0:", d >= valor_critico)
+    print("\tAcepta H0:", d < valor_critico)
 
 def uniforme(numbers: list, a=1, b=999):
     fo = dict()
@@ -82,7 +84,7 @@ def uniforme(numbers: list, a=1, b=999):
     print("K-S: Uniforme")
     print("\tD:", d)
     print("\tValor critico:", valor_critico)
-    print("\tRechaza H0:", d >= valor_critico)
+    print("\tAcepta H0:", d < valor_critico)
 
 def generador_aleatorio(numbers: list):
     minimo = min(numbers)
@@ -106,7 +108,7 @@ def generador_aleatorio(numbers: list):
     print("K-S: Generador Aleatorio")
     print("\tD:", d)
     print("\tValor critico:", valor_critico)
-    print("\tRechaza H0:", d >= valor_critico)
+    print("\tAcepta H0:", d < valor_critico)
 
 def exponencial(numbers: list):
     n = len(numbers)
@@ -127,10 +129,76 @@ def exponencial(numbers: list):
     print("K-S: Exponencial")
     print("\tD:", d)
     print("\tValor critico:", valor_critico)
-    print("\tRechaza H0:", d >= valor_critico)
+    print("\tAcepta H0:", d < valor_critico)
 
-def pruebas_ks(numbers: list, muestra):
+def calc_fo(numbers, discreto):
+    n = len(numbers)
+    fo = dict()
+    if discreto:
+        fo = dict(Counter(numbers))
+    else:
+        num_intervalos = round(sqrt(n))
+        minimo = min(numbers)
+        maximo = max(numbers)
+        calc = (maximo - minimo) / num_intervalos
+
+        lit = [(minimo + i*calc, minimo + (i+1)*calc) for i in range(num_intervalos)]
+
+        for i in lit:
+            fo[i] = 0
+        
+        for i in numbers:
+            x = min(int((i - minimo) / calc), num_intervalos - 1)
+            fo[lit[x]] += 1
+
+    return fo
+
+def calc_foa(fo):
+    foa = [0] * len(fo)
+    j = 0
+    for i in fo:
+        if not j:
+            foa[j] = fo[i]
+        else:
+            foa[j] = fo[i] + foa[j-1]
+        j += 1
+    
+    return foa
+
+def calc_poa(foa, n):
+    poa = [0] * len(foa)
+    for i in range(len(foa)):
+        poa[i] = foa[i] / n
+    
+    return poa
+
+def calc_pe():
+    return 0
+
+def calc_pea(pe):
+    return accumulate(pe)
+
+def calc_dif_poa_pea(poa, pea):
+    difs = [0]*len(poa)
+    for i in range(len(poa)):
+        difs[i] = abs(poa[i] - pea[i])
+    return difs
+
+def pruebas_ks(numbers: list, muestra, discreto):
     print("Muestra:", muestra)
+    
+    n = len(numbers)
+    fo = calc_fo(numbers, discreto)
+    fo_ordenado = sorted(fo.keys())
+    foa = calc_foa(fo_ordenado)
+    poa = calc_poa(foa, n)
+    pe = calc_pe()
+    pea = calc_pea(pe)
+    difs = calc_dif_poa_pea(poa, pea)
+
+    d = max(difs)
+    valor_limite = 1.36 / sqrt(n)
+    
     poisson(numbers)
     uniforme(numbers)
     generador_aleatorio(numbers)

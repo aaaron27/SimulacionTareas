@@ -27,7 +27,8 @@ def init_numbers():
 
 def main():
     init_numbers()
-    pruebas_ks(m13, 'm13')
+    pruebas_ks(m13, 'm13', True)
+    pruebas_ks(m8, 'm8', False)
 
 if __name__ == '__main__':
     main()
