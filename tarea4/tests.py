@@ -102,17 +102,19 @@ def prueba_chi_cuadrado(datos, nombre_muestra):
 def main():
     init_numbers()
     if not m8: return
-    pruebas_ks(m13, 'm13')
 
     muestras = [
-        (m15, "M15"),  # Uniforme
-        (m16, "M16"),  # Exponencial
-        (m8, "M8"),  # Normal
-        (m13, "M13")  # Geometrica
+        (m15, "M15", False),  # Uniforme
+        (m16, "M16", False),  # Exponencial
+        (m8, "M8", False),  # Normal
+        (m13, "M13", True)  # Geometrica
     ]
 
-    for datos, nombre in muestras:
+    for datos, nombre, _ in muestras:
         prueba_chi_cuadrado(datos, nombre)
+    
+    for datos, nombre, discreta in muestras:
+        pruebas_ks(datos, nombre, discreta)
 
 
 if __name__ == '__main__':
