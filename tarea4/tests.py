@@ -1,3 +1,6 @@
+import scipy.stats as stats
+import numpy as np
+
 M8_PATH = "./muestras/m8.txt"
 M13_PATH = "./muestras/m13.txt"
 M15_PATH = "./muestras/m15.txt"
@@ -23,8 +26,93 @@ def init_numbers():
     with open(M16_PATH, "r") as f:
         m16 = [float(i) for i in f.read().splitlines()]
 
+
+def prueba_chi_cuadrado(datos, nombre_muestra):
+    datos = np.array(datos)
+    N = len(datos)
+    nombre_lower = nombre_muestra.lower()
+
+    print(f"\n{'=' * 20} PROCESANDO {nombre_muestra} {'=' * 20}")
+
+    if "m15" in nombre_lower:
+        dist_nom = "Uniforme"
+        a, b = np.min(datos), np.max(datos) - np.min(datos)
+        cdf = lambda x: stats.uniform.cdf(x, loc=a, scale=b)
+        k_params = 2
+
+    elif "m16" in nombre_lower:
+        dist_nom = "Exponencial"
+        media = np.mean(datos)
+        cdf = lambda x: stats.expon.cdf(x, scale=media)
+        k_params = 1
+
+    elif "m8" in nombre_lower:
+        dist_nom = "Normal"
+        mu, sigma = np.mean(datos), np.std(datos, ddof=1)
+        cdf = lambda x: stats.norm.cdf(x, loc=mu, scale=sigma)
+        k_params = 2
+
+    elif "m13" in nombre_lower:
+        dist_nom = "Geométrica"
+        # Geometrica p = 1/media
+        p = 1 / np.mean(datos)
+        cdf = lambda x: stats.geom.cdf(x, p=p, loc=0)
+        k_params = 1
+    else:
+        print("Distribución no identificada.")
+        return
+
+    # Generar 7 Intervalos de igual amplitud
+    num_bins = 7
+    obs, bordes = np.histogram(datos, bins=num_bins)
+
+    # Calcular Chi-Cuadrado
+    chi_total = 0
+
+    for i in range(num_bins):
+        lim_inf = bordes[i]
+        lim_sup = bordes[i + 1]
+
+        Oi = obs[i]
+
+        #PE:
+        Pe = cdf(lim_sup) - cdf(lim_inf)
+
+        #evitar P=0 en colas extremas
+        if Pe <= 0: Pe = 1e-9
+
+        Ei = N * Pe
+
+        # Chi Parcial
+        chi_parcial = ((Oi - Ei) ** 2) / Ei
+        chi_total += chi_parcial
+
+    # Calcular P-Valor
+    gl = num_bins - 1 - k_params  # Grados de libertad
+    alpha = 0.05
+    valor_critico = stats.chi2.ppf(1 - alpha, gl)
+    p_valor = 1 - stats.chi2.cdf(chi_total, gl)
+
+    print(f"RESUMEN {nombre_muestra}:")
+    print(f"  Chi2 Calc:   {chi_total:.4f}")
+    print(f"  Chi2 Crít:   {valor_critico:.4f}")
+    print(f"  P-Valor:     {p_valor}")
+
+
 def main():
     init_numbers()
+    if not m8: return
+
+    muestras = [
+        (m15, "M15"),  # Uniforme
+        (m16, "M16"),  # Exponencial
+        (m8, "M8"),  # Normal
+        (m13, "M13")  # Geometrica
+    ]
+
+    for datos, nombre in muestras:
+        prueba_chi_cuadrado(datos, nombre)
+
 
 if __name__ == '__main__':
     main()
