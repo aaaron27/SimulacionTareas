@@ -1,6 +1,8 @@
 import scipy.stats as stats
 import numpy as np
 
+from kolmogorov import pruebas_ks
+
 M8_PATH = "./muestras/m8.txt"
 M13_PATH = "./muestras/m13.txt"
 M15_PATH = "./muestras/m15.txt"
