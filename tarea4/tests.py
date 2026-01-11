@@ -1,7 +1,7 @@
 import scipy.stats as stats
 import numpy as np
 
-from kolmogorov import pruebas_ks
+from kolmogorov import pruebas_ks, grafico_poisson
 
 M8_PATH = "./muestras/m8.txt"
 M13_PATH = "./muestras/m13.txt"
@@ -115,6 +115,7 @@ def main():
     
     for datos, nombre, discreta in muestras:
         pruebas_ks(datos, nombre, discreta)
+        grafico_poisson(datos)
 
 
 if __name__ == '__main__':

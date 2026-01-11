@@ -1,274 +1,197 @@
 import numpy as np
 from scipy import stats
-from math import sqrt, exp
+from math import sqrt
 from collections import Counter
-from itertools import accumulate
+import matplotlib.pyplot as plt 
 
-POISSON = 1
-UNIFORME = 2
-GENERADORA = 3
-EXPONENCIAL = 4
 
-def poisson2(numbers: list):
-    lambda_observado = np.mean(numbers)
-    fo = dict()
+def grafico_normal(numbers):
+    mu = np.mean(numbers)
+    sigma = np.std(numbers)
+
+    x = np.linspace(min(numbers), max(numbers), 1000)
+    pdf = stats.norm.pdf(x, mu, sigma)
+
+    plt.hist(numbers, bins=50, density=True, alpha=0.6, label="Muestra")
+    plt.plot(x, pdf, linewidth=2, label=f"Normal(μ={mu:.3f}, σ={sigma:.3f})")
+
+    plt.title("Distribución Normal")
+    plt.xlabel("x")
+    plt.ylabel("Densidad")
+    plt.legend()
+    plt.grid()
+    plt.show()
+
+def grafico_exponencial(numbers):
+    media = np.mean(numbers)
+
+    x = np.linspace(0, max(numbers), 1000)
+    pdf = stats.expon.pdf(x, scale=media)
+
+    plt.hist(numbers, bins=50, density=True, alpha=0.6, label="Muestra")
+    plt.plot(x, pdf, linewidth=2, label=f"Exponencial(media={media:.3f})")
+
+    plt.title("Distribución Exponencial")
+    plt.xlabel("x")
+    plt.ylabel("Densidad")
+    plt.legend()
+    plt.grid()
+    plt.show()
+
+def grafico_uniforme_continua(numbers):
+    a = min(numbers)
+    b = max(numbers)
+
+    x = np.linspace(a, b, 1000)
+    pdf = stats.uniform.pdf(x, loc=a, scale=b-a)
+
+    plt.hist(numbers, bins=50, density=True, alpha=0.6, label="Muestra")
+    plt.plot(x, pdf, linewidth=2, label=f"Uniforme([{a:.2f},{b:.2f}])")
+
+    plt.title("Distribución Uniforme Continua")
+    plt.xlabel("x")
+    plt.ylabel("Densidad")
+    plt.legend()
+    plt.grid()
+    plt.show()
+
+def grafico_poisson(numbers):
+    lambda_ = np.mean(numbers)
+
+    valores, frec = np.unique(numbers, return_counts=True)
+    frec_rel = frec / len(numbers)
+
+    pmf = stats.poisson.pmf(valores, lambda_)
+
+    plt.bar(valores, frec_rel, alpha=0.6, label="Muestra")
+    plt.plot(valores, pmf, 'o-', linewidth=2, label=f"Poisson(λ={lambda_:.3f})")
+
+    plt.title("Distribución Poisson")
+    plt.xlabel("k")
+    plt.ylabel("Probabilidad")
+    plt.legend()
+    plt.grid()
+    plt.show()
+
+def grafico_uniforme_discreta(numbers):
+    valores, frec = np.unique(numbers, return_counts=True)
     n = len(numbers)
 
-    for i in numbers:
-        fo[i] = fo.get(i, 0) + 1
+    a = min(valores)
+    b = max(valores)
 
-    fo_ordenado = sorted(fo.keys())
+    frec_rel = frec / n
+    p = 1 / (b - a + 1)
 
-    foa = [0] * len(fo)
-    j = 0
-    for i in fo_ordenado:
-        if not j:
-            foa[j] = fo[i]
-        else:
-            foa[j] = fo[i] + foa[j-1]
-        j += 1
-    
-    poa = [0] * len(fo)
-    for i in range(len(fo)):
-        poa[i] = foa[i] / n
+    plt.bar(valores, frec_rel, alpha=0.6, label="Muestra")
+    plt.hlines(p, a, b, colors='r', label=f"Uniforme discreta [{a},{b}]")
 
-    pe = [0] * len(fo)
-    for i in range(len(fo)):
-        pe[i] = stats.poisson.cdf(fo_ordenado[i], lambda_observado)
-    
-    difs = [0] * len(fo)
-    for i in range(len(fo)):
-        difs[i] = abs(poa[i] - pe[i])
-    
-    d = max(difs)
+    plt.title("Distribución Uniforme Discreta")
+    plt.xlabel("k")
+    plt.ylabel("Probabilidad")
+    plt.legend()
+    plt.grid()
+    plt.show()
 
-    valor_critico = 1.36 / sqrt(n)
+# continuos
 
-    print("K-S: Poisson")
-    print("\tlambda:", lambda_observado)
-    print("\tD:", d)
-    print("\tValor critico:", valor_critico)
-    print("\tAcepta H0:", d < valor_critico)
-
-def uniforme(numbers: list, a=1, b=999):
-    fo = dict()
+def generador(numbers):
     n = len(numbers)
-
-    for i in numbers:
-        fo[i] = fo.get(i, 0) + 1
-
-    fo_ordenado = sorted(fo.keys())
-
-    foa = [0] * len(fo)
-    j = 0
-    for i in fo_ordenado:
-        if not j:
-            foa[j] = fo[i]
-        else:
-            foa[j] = fo[i] + foa[j-1]
-        j += 1
-
-    poa = [0] * len(fo)
-    for i in range(len(fo)):
-        poa[i] = foa[i] / n
-
-    pe = [0] * len(fo)
-    values = b - a + 1
-
-    for i in range(len(fo)):
-        pe[i] = (fo_ordenado[i] - a + 1) / values
     
-    difs = [0]*len(fo)
-    for i in range(len(fo)):
-        difs[i] = abs(poa[i] - pe[i])
-    
-    d = max(difs)
-
-    valor_critico = 1.36 / sqrt(n)
-
-    print("K-S: Uniforme")
-    print("\tD:", d)
-    print("\tValor critico:", valor_critico)
-    print("\tAcepta H0:", d < valor_critico)
-
-def generador_aleatorio(numbers: list):
-    minimo = min(numbers)
     maximo = max(numbers)
+    minimo = min(numbers)
 
-    normalizados = [(i - minimo) / (maximo - minimo) for i in numbers]
-    numeros_ordenados = sorted(normalizados)
-    n = len(numbers)
+    norm = [(x - minimo) / (maximo - minimo) for x in numbers]
+    sorted_numbers = sorted(norm)
 
-    f = [0]*n
-    for i in range(n):
-        f[i] = (i+1) / n
+    fn = [(i+1)/n for i in range(n)]
+    f = sorted_numbers
+
+    d = max(abs(fn[i] - f[i]) for i in range(n))
     
-    difs = [0]*n
-    for i in range(n):
-        difs[i] = abs(numeros_ordenados[i] - f[i])
-    d = max(difs)
+    return d
 
-    valor_critico = 1.36 / sqrt(n)
-
-    print("K-S: Generador Aleatorio")
-    print("\tD:", d)
-    print("\tValor critico:", valor_critico)
-    print("\tAcepta H0:", d < valor_critico)
-
-def exponencial(numbers: list):
+def exponencial(numbers):
     n = len(numbers)
+    sorted_numbers = sorted(numbers)
+    media = np.mean(sorted_numbers)
+
+    fn = [(i + 1) / n for i in range(n)]
+    f = [stats.expon.cdf(x, scale=media) for x in sorted_numbers]
+    d = max(abs(fn[i] - f[i]) for i in range(n))
+
+    return d
+
+# discretos
+
+def uniforme(numbers, a=None, b=None):
+    n = len(numbers)
+    fo = Counter(numbers)
+    values = sorted(fo.keys())
+
+    if a is None:
+        a = min(values)
+    if b is None:
+        b = max(values)
+    
+    foa = []
+    acumulada = 0
+    for i in values:
+        acumulada += fo[i]
+        foa.append(acumulada)
+    
+    poa = [i / n for i in foa]
+    pea = [(i - a + 1) / (b - a + 1) for i in values]
+
+    d = max(abs(poa[i] - pea[i]) for i in range(len(values)))
+
+    return d
+
+def poisson(numbers):
+    n = len(numbers)
+    fo = Counter(numbers)
+    values = sorted(fo.keys())
     media = np.mean(numbers)
-    lambda_esperado = 1 / media
 
-    numeros_ordenados = sorted(numbers)
+    foa = []
+    c = 0
+    for i in values:
+        c += fo[i]
+        foa.append(c)
+    
+    poa = [i / n for i in foa]
+    pea = [stats.poisson.cdf(v, media) for v in values]
 
-    f = [(i+1)/n for i in range(n)]
+    d = max(abs(poa[i] - pea[i]) for i in range(len(values)))
 
-    ft = [stats.expon.cdf(numeros_ordenados[i], scale=1/lambda_esperado) for i in range(n)]
+    return d
 
-    difs = [abs(f[i] - ft[i]) for i in range(n)]
-
-    d = max(difs)
-    valor_critico = 1.36 / sqrt(n)
-
-    print("K-S: Exponencial")
-    print("\tD:", d)
-    print("\tValor critico:", valor_critico)
-    print("\tAcepta H0:", d < valor_critico)
-
-def calc_fo(numbers, discreto):
+def pruebas_ks(numbers: list, muestra, discreta):
+    print(f"\nMuestra: {muestra}")
     n = len(numbers)
-    fo = dict()
-    lit = []
-    if discreto:
-        fo = dict(Counter(numbers))
+    critico = 1.36 / sqrt(n)
+    print("Valor crítico:", critico)
+    print("Media:", np.mean(numbers))
+    print("Desviacion estandar:", np.std(numbers))
+
+    if discreta:
+        d = uniforme(numbers)
+        print("Uniforme")
+        print("\tD:", d)
+        print("\tAcepta H0:", d < critico)
+
+        d = poisson(numbers)
+        print("Poisson")
+        print("\tD:", d)
+        print("\tAcepta H0:", d < critico)
+
     else:
-        num_intervalos = round(sqrt(n))
-        minimo = min(numbers)
-        maximo = max(numbers)
-        calc = (maximo - minimo) / num_intervalos
+        d = generador(numbers)
+        print("Generador")
+        print("\tD:", d)
+        print("\tAcepta H0:", d < critico)
 
-        lit = [(minimo + i*calc, minimo + (i+1)*calc) for i in range(num_intervalos)]
-
-        for i in lit:
-            fo[i] = 0
-        
-        for i in numbers:
-            x = min(int((i - minimo) / calc), num_intervalos - 1)
-            fo[lit[x]] += 1
-
-    return fo, lit
-
-def calc_foa(fo, fo_ordenado):
-    foa = [0] * len(fo)
-    j = 0
-    for i in fo_ordenado:
-        if not j:
-            foa[j] = fo[i]
-        else:
-            foa[j] = fo[i] + foa[j-1]
-        j += 1
-    
-    return foa
-
-def calc_poa(foa, n):
-    poa = [0] * len(foa)
-    for i in range(len(foa)):
-        poa[i] = foa[i] / n
-    
-    return poa
-
-def calc_pe(distribucion, fo, media):
-    pe = [0]*len(fo)
-    
-    match distribucion:
-        case 1:
-            for i in range(len(fo)):
-                pe[i] = stats.poisson.pmf(len(fo), media)
-        case 2:
-            for i in range(len(fo)):
-                pe[i] = fo[i] / 100000
-        case _:
-            return -1
-    return pe
-
-def calc_pea(pe):
-    return list(accumulate(pe))
-
-def calc_dif_poa_pea(poa, pea):
-    difs = [0]*len(poa)
-    for i in range(len(poa)):
-        difs[i] = abs(poa[i] - pea[i])
-    return difs
-
-def calc_dif_gen(sorted_numbers):
-    n = len(sorted_numbers)
-    f = [0]*n
-    for i in range(n):
-        f[i] = (i+1) / n
-    
-    difs = [0]*n
-    for i in range(n):
-        difs[i] = abs(sorted_numbers[i] - f[i])
-
-    return difs
-
-def calc_pea_exp(limite_superior, cant_intervalos, lambda_esperado):
-   return [stats.expon.cdf(limite_superior[i], scale=1/lambda_esperado) for i in range(cant_intervalos)]
-
-def pruebas_ks(numbers: list, muestra, discreto):
-    print("\nMuestra:", muestra)
-    
-    n = len(numbers)
-    media = np.mean(numbers)
-    fo, limites_exp = calc_fo(numbers, discreto)
-    fo_ordenado = sorted(fo.keys())
-    foa = calc_foa(fo, fo_ordenado)
-    poa = calc_poa(foa, n)
-    pe1 = calc_pe(1, fo_ordenado, media)
-    pe2 = calc_pe(2, fo_ordenado, media)
-
-    pea1 = calc_pea(pe1)
-    pea2 = calc_pea(pe2)
-
-    pea4 = []
-    difs4 = []
-    d4 = None
-    if not discreto:
-        pea4 = calc_pea_exp([i for _,i in limites_exp], len(fo), 1/media)
-        difs4 = calc_dif_poa_pea(poa, pea4)
-        d4 = max(difs4)
-
-    difs1 = calc_dif_poa_pea(poa, pea1)
-    difs2 = calc_dif_poa_pea(poa, pea2)
-    difs3 = calc_dif_gen(sorted(numbers))
-
-    d1 = max(difs1)
-    d2 = max(difs2)
-    d3 = max(difs3)
-
-    valor_limite = 1.36 / sqrt(n)
-
-    print("Valor critico:", valor_limite)
-
-    if not discreto:
-        print("\nPoisson")
-
-        print("\tD:", d1)
-        print("\tAcepta H0:", d1 < valor_limite)
-
-    print("Uniforme")
-    
-    print("\tD:", d2)
-    print("\tAcepta H0:", d2 < valor_limite)
-
-    print("Generadora aleatoria")
-
-    print("\tD:", d3)
-    print("\tAcepta H0:", d3 < valor_limite)
-
-    if not discreto:
+        d = exponencial(numbers)
         print("Exponencial")
-
-        print("\tD:", d4)
-        print("\tAcepta H0:", d4 < valor_limite)
+        print("\tD:", d)
+        print("\tAcepta H0:", d < critico)
