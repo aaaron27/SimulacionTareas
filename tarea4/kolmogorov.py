@@ -38,6 +38,11 @@ def ks_exponencial(numbers, bins=None):
     bordes[-1] = max_val + 0.01
     
     fo, _ = np.histogram(numbers, bins=bordes)
+
+    n -= fo[-1]
+    fo = fo[:-1]
+    bordes = bordes[:-1]
+
     foa = np.cumsum(fo)
     poa = foa / n
     
@@ -47,7 +52,7 @@ def ks_exponencial(numbers, bins=None):
     d = max(diferencias)
     
     tabla = pd.DataFrame({
-        'No.': range(1, bins + 1),
+        'No.': range(1, len(fo) + 1),
         'Intervalo': [f"[{bordes[i]:7.2f}, {bordes[i+1]:7.2f})" for i in range(len(bordes)-1)],
         'fo': fo,
         'foa': foa,
@@ -140,6 +145,7 @@ def ks_poisson(numbers, bins=None):
     bordes[-1] = max_val + 0.01
     
     fo, _ = np.histogram(numbers, bins=bordes)
+
     foa = np.cumsum(fo)
     poa = foa / n
     
@@ -186,7 +192,7 @@ def pruebas_ks(numbers, muestra_id, discreta):
     print(f"D = {d:.4f}")
     print(f"Acepta H0: {d < critico} (d {'<' if d < critico else '>='} {critico:.4f})")
     print("\nTabla de intervalos:")
-    #print(tabla.to_string(index=False))
+    print(tabla.to_string(index=False))
     resultados['exponencial'] = {'d': d, 'acepta': d < critico}
     
     print("\n" + "-" * 70)
@@ -197,7 +203,7 @@ def pruebas_ks(numbers, muestra_id, discreta):
     print(f"D = {d:.4f}")
     print(f"Acepta H0: {d < critico} (d {'<' if d < critico else '>='} {critico:.4f})")
     print("\nTabla de intervalos:")
-    #print(tabla.to_string(index=False))
+    print(tabla.to_string(index=False))
     resultados['uniforme'] = {'d': d, 'acepta': d < critico}
     
     print("\n" + "-" * 70)
@@ -208,7 +214,7 @@ def pruebas_ks(numbers, muestra_id, discreta):
     print(f"D = {d:.4f}")
     print(f"Acepta H0: {d < critico} (d {'<' if d < critico else '>='} {critico:.4f})")
     print("\nTabla de intervalos:")
-    #print(tabla.to_string(index=False))
+    print(tabla.to_string(index=False))
     resultados['poisson'] = {'d': d, 'acepta': d < critico}
     
     print("\n" + "-" * 70)
