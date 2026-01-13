@@ -183,7 +183,6 @@ def pruebas_ks(numbers, muestra_id, discreta):
     
     resultados = {}
     
-    
     print("\n" + "-" * 70)
     print("2. Distribucion exponencial")
     print("-" * 70)

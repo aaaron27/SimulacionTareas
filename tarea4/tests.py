@@ -142,10 +142,8 @@ def main():
     for datos, nombre, _ in muestras:
         prueba_chi_cuadrado(datos, nombre)
 
-    # for datos, nombre, discreta in muestras:
-    #     pruebas_ks(datos, nombre, discreta)
-    #pruebas_ks(m13, 'm13', True)
-    #pruebas_ks(m13, 'm13', True)
+    for datos, nombre, discreta in muestras:
+        pruebas_ks(datos, nombre, discreta)
 
     print(1/np.mean(m13))
     #grafico_normal(m8)
@@ -160,6 +158,7 @@ def main():
 
     #grafico_pdf_uniforme(m15)
     #grafico_cdf_uniforme(m15)
+    analizar_muestra_piecewise(m15)
     analizar_muestra_gamma(m16, 'm16')
     analizar_muestra_normal(m8, 'm8')
     analizar_muestra_exponencial(m13, 'm13')
