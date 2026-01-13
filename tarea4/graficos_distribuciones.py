@@ -3,19 +3,17 @@ import numpy as np
 from scipy import stats
 
 def analizar_muestra_uniforme(numbers, nombre="muestra"):
-    """
-    Análisis completo para distribución uniforme
-    """
     numbers = np.asarray(numbers, dtype=float)
     n = len(numbers)
     bins = int(np.sqrt(n))
+    sigma = np.std(numbers, ddof=1)
     
     # Parámetros
     a = numbers.min()
     b = numbers.max()
     
     # Crear figura con dos subplots
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+    _, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
     
     # --- PDF ---
     ax1.hist(numbers, bins=bins, density=True, alpha=0.6, 
@@ -34,7 +32,7 @@ def analizar_muestra_uniforme(numbers, nombre="muestra"):
     
     ax1.set_xlabel('x', fontsize=12)
     ax1.set_ylabel('Densidad de Probabilidad', fontsize=12)
-    ax1.set_title(f'PDF - Distribución Uniforme ({nombre})\n$a = {a:.4f}$, $b = {b:.4f}$', 
+    ax1.set_title(f'PDF - Distribución Uniforme ({nombre})\n$a = {a:.4f}$, $b = {b:.4f}$, $σ = {sigma:.4f}$', 
                   fontsize=13, fontweight='bold')
     ax1.legend(fontsize=10)
     ax1.grid(True, alpha=0.3)
@@ -54,7 +52,7 @@ def analizar_muestra_uniforme(numbers, nombre="muestra"):
     
     ax2.set_xlabel('x', fontsize=12)
     ax2.set_ylabel('Probabilidad Acumulada', fontsize=12)
-    ax2.set_title(f'CDF - Distribución Uniforme ({nombre})\n$a = {a:.4f}$, $b = {b:.4f}$', 
+    ax2.set_title(f'CDF - Distribución Uniforme ({nombre})\n$a = {a:.4f}$, $b = {b:.4f}$, $σ = {sigma:.4f}$', 
                   fontsize=13, fontweight='bold')
     ax2.legend(fontsize=10)
     ax2.grid(True, alpha=0.3)
@@ -63,9 +61,6 @@ def analizar_muestra_uniforme(numbers, nombre="muestra"):
     plt.show()
 
 def analizar_muestra_exponencial(numbers, nombre="m16"):
-    """
-    Análisis completo para distribución exponencial
-    """
     numbers = np.asarray(numbers, dtype=float)
     n = len(numbers)
     bins = int(np.sqrt(n))
@@ -73,6 +68,7 @@ def analizar_muestra_exponencial(numbers, nombre="m16"):
     # Parámetros
     beta = np.mean(numbers)
     lambd = 1 / beta
+    sigma = np.std(numbers, ddof=1)
     
     # Crear figura con dos subplots
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
@@ -88,7 +84,7 @@ def analizar_muestra_exponencial(numbers, nombre="m16"):
              label=f'PDF Teórica: $f(x) = \\frac{{1}}{{β}} e^{{-x/β}}$')
     ax1.set_xlabel('x', fontsize=12)
     ax1.set_ylabel('Densidad de Probabilidad', fontsize=12)
-    ax1.set_title(f'PDF - Distribución Exponencial ({nombre})\n$β = {beta:.4f}$, $λ = {lambd:.4f}$', 
+    ax1.set_title(f'PDF - Distribución Exponencial ({nombre})\n$β = {beta:.4f}$, $λ = {lambd:.4f}$, $σ = {sigma:.4f}$', 
                   fontsize=13, fontweight='bold')
     ax1.legend(fontsize=10)
     ax1.grid(True, alpha=0.3)
@@ -104,7 +100,7 @@ def analizar_muestra_exponencial(numbers, nombre="m16"):
              label=f'CDF Teórica: $F(x) = 1 - e^{{-x/β}}$')
     ax2.set_xlabel('x', fontsize=12)
     ax2.set_ylabel('Probabilidad Acumulada', fontsize=12)
-    ax2.set_title(f'CDF - Distribución Exponencial ({nombre})\n$β = {beta:.4f}$', 
+    ax2.set_title(f'CDF - Distribución Exponencial ({nombre})\n$β = {beta:.4f}$, $σ = {sigma:.4f}$', 
                   fontsize=13, fontweight='bold')
     ax2.legend(fontsize=10)
     ax2.grid(True, alpha=0.3)
@@ -113,9 +109,6 @@ def analizar_muestra_exponencial(numbers, nombre="m16"):
     plt.show()
 
 def analizar_muestra_normal(numbers, nombre="m8"):
-    """
-    Análisis completo para distribución normal
-    """
     numbers = np.asarray(numbers, dtype=float)
     n = len(numbers)
     bins = int(np.sqrt(n))
@@ -163,12 +156,10 @@ def analizar_muestra_normal(numbers, nombre="m8"):
     plt.show()
 
 def analizar_muestra_gamma(numbers, nombre="m13"):
-    """
-    Análisis completo para distribución gamma
-    """
     numbers = np.asarray(numbers, dtype=float)
     n = len(numbers)
     bins = int(np.sqrt(n))
+    sigma = np.std(numbers, ddof=1)
     
     # Estimar parámetros usando MLE
     shape, loc, scale = stats.gamma.fit(numbers, floc=0)
@@ -187,7 +178,7 @@ def analizar_muestra_gamma(numbers, nombre="m13"):
              label=f'PDF Teórica: $f(x) = \\frac{{x^{{α-1}} e^{{-x/β}}}}{{Γ(α)β^α}}$')
     ax1.set_xlabel('x', fontsize=12)
     ax1.set_ylabel('Densidad de Probabilidad', fontsize=12)
-    ax1.set_title(f'PDF - Distribución Gamma ({nombre})\n$α = {shape:.4f}$, $β = {scale:.4f}$', 
+    ax1.set_title(f'PDF - Distribución Gamma ({nombre})\n$α = {shape:.4f}$, $β = {scale:.4f}$, $σ = {sigma:.4f}$', 
                   fontsize=13, fontweight='bold')
     ax1.legend(fontsize=9)
     ax1.grid(True, alpha=0.3)
@@ -274,9 +265,6 @@ def analizar_muestra_piecewise(numbers, nombre="muestra"):
     plt.show()
 
 def analizar_muestra_geometrica(numbers, nombre="muestra"):
-    """
-    Análisis completo para distribución geométrica
-    """
     numbers = np.asarray(numbers, dtype=int)
     n = len(numbers)
     
@@ -312,7 +300,7 @@ def analizar_muestra_geometrica(numbers, nombre="muestra"):
     ax2.step(numbers_sorted, Fn, where='post', linewidth=2, 
              label='CDF Empírica', color='blue')
     
-    # CDF teórica: F(k) = 1 - (1-p)^k
+    # CDF teórica
     x_cdf = np.arange(1, numbers.max() + 1)
     cdf_teorica = 1 - (1 - p)**x_cdf
     ax2.step(x_cdf, cdf_teorica, where='post', color='r', linewidth=2.5,
@@ -374,29 +362,6 @@ def grafico_gamma(numbers, bins=None):
     plt.title(f"Distribución gamma (β = {beta:.3f})")
     plt.show()
 
-def grafico_weibull(numbers, bins=None):
-    numbers = np.asarray(numbers, dtype=float)
-    n = len(numbers)
-
-    if bins is None:
-        bins = int(np.sqrt(n))
-
-    beta = np.mean(numbers)
-
-    plt.figure()
-    plt.hist(numbers, bins=bins, density=True, alpha=0.5)
-
-    x = np.linspace(0, numbers.max(), 300)
-    from scipy.stats import weibull_min
-    shape, loc, scale = weibull_min.fit(numbers, floc=0)
-    pdf = weibull_min.pdf(x, shape, loc, scale)
-    
-    plt.plot(x, pdf)
-    plt.xlabel("x")
-    plt.ylabel("Densidad")
-    plt.title(f"Distribución weibull (β = {beta:.3f})")
-    plt.show()
-
 def grafico_cdf_exponencial(numbers):
     numbers = np.sort(numbers)
     n = len(numbers)
@@ -436,6 +401,66 @@ def grafico_exponencial(numbers, bins=None):
     plt.xlabel("x")
     plt.ylabel("Densidad")
     plt.title(f"Distribución Exponencial (β = {beta:.3f})")
+    plt.show()
+
+def cdf_piecewise(x):
+    x = np.asarray(x)
+    F = np.zeros_like(x, dtype=float)
+
+    F[(0 <= x) & (x <= 1)] = 0.5 * x[(0 <= x) & (x <= 1)]
+    F[(1 < x) & (x <= 1.5)] = 0.5
+    F[(1.5 < x) & (x <= 1.875)] = np.exp(x[(1.5 < x) & (x <= 1.875)] - 1.5) - 0.5
+    F[x > 1.875] = np.exp(1.875 - 1.5) - 0.5
+
+    return F
+
+def pdf_piecewise(x):
+    x = np.asarray(x)
+    f = np.zeros_like(x, dtype=float)
+
+    f[(0 <= x) & (x <= 1)] = 0.5
+    f[(1.5 < x) & (x <= 1.875)] = np.exp(x[(1.5 < x) & (x <= 1.875)] - 1.5)
+
+    return f
+
+def analizar_muestra_piecewise(numbers, nombre="muestra"):
+    numbers = np.asarray(numbers, dtype=float)
+    n = len(numbers)
+    bins = int(np.sqrt(n))
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+
+    # --- PDF ---
+    ax1.hist(numbers, bins=bins, density=True, alpha=0.6,
+             edgecolor='black', label='Histograma')
+
+    x_pdf = np.linspace(0, 2, 400)
+    ax1.plot(x_pdf, pdf_piecewise(x_pdf), 'r-', linewidth=2.5,
+             label='PDF teórica')
+
+    ax1.set_xlabel('x')
+    ax1.set_ylabel('Densidad de Probabilidad')
+    ax1.set_title(f'PDF - Función por partes ({nombre})')
+    ax1.legend()
+    ax1.grid(True, alpha=0.3)
+
+    # --- CDF ---
+    numbers_sorted = np.sort(numbers)
+    Fn = np.arange(1, n + 1) / n
+    F_teorica = cdf_piecewise(numbers_sorted)
+
+    ax2.step(numbers_sorted, Fn, where='post',
+             linewidth=2, label='CDF Empírica')
+    ax2.plot(numbers_sorted, F_teorica, 'r-', linewidth=2.5,
+             label='CDF Teórica')
+
+    ax2.set_xlabel('x')
+    ax2.set_ylabel('Probabilidad Acumulada')
+    ax2.set_title(f'CDF - Función por partes ({nombre})')
+    ax2.legend()
+    ax2.grid(True, alpha=0.3)
+
+    plt.tight_layout()
     plt.show()
 
 def grafico_geometrica(numbers, bins=None):
