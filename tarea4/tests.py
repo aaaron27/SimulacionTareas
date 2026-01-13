@@ -36,17 +36,31 @@ def prueba_chi_cuadrado(datos, nombre_muestra):
     N = len(datos)
     nombre_lower = nombre_muestra.lower()
 
+    # Variables de configuración
+    dist_nom = ""
+    k_params = 0
+    cdf = None
+
+    # --- LÓGICA DE DISTRIBUCIONES ---
     if "m15" in nombre_lower:
         dist_nom = "Uniforme"
         a, b = np.min(datos), np.max(datos) - np.min(datos)
         cdf = lambda x: stats.uniform.cdf(x, loc=a, scale=b)
-        k_params = 2
+        k_params = 2  # 2 parámetros estimados (min, max)
 
     elif "m16" in nombre_lower:
-        dist_nom = "Exponencial"
+
+        dist_nom = "Gamma"
+
+
         media = np.mean(datos)
-        cdf = lambda x: stats.expon.cdf(x, scale=media)
-        k_params = 1
+        var = np.var(datos)
+        std = np.std(datos)
+        alpha_est = (media / std) ** 2
+        scale_est = var / media
+        cdf = lambda x: stats.gamma.cdf(x, a=alpha_est, loc=0, scale=scale_est)
+
+        k_params = 2
 
     elif "m8" in nombre_lower:
         dist_nom = "Normal"
@@ -56,20 +70,31 @@ def prueba_chi_cuadrado(datos, nombre_muestra):
 
     elif "m13" in nombre_lower:
         dist_nom = "Geométrica"
-        # Geometrica p = 1/media
-        p = 1 / np.mean(datos)
+
+        conteo_999 = np.sum(datos == 999)
+
+        N = N - conteo_999
+        print(f"  [M13] Ajuste: Se ignoran {conteo_999} valores '999' para el cálculo.")
+
+        datos_validos = datos[datos != 999]
+        p = 1 / np.mean(datos_validos)
+
         cdf = lambda x: stats.geom.cdf(x, p=p, loc=0)
         k_params = 1
     else:
-        print("Distribución no identificada.")
+        print(f"Distribución no identificada para {nombre_muestra}.")
         return
 
-    # Generar 7 Intervalos de igual amplitud
     num_bins = 7
     obs, bordes = np.histogram(datos, bins=num_bins)
 
-    # Calcular Chi-Cuadrado
+    if "m13" in nombre_lower:
+        obs[-1] = obs[-1] - conteo_999
+        if obs[-1] < 0: obs[-1] = 0  # Seguridad
+
+    # --- CALCULO CHI-CUADRADO ---
     chi_total = 0
+
 
     for i in range(num_bins):
         lim_inf = bordes[i]
@@ -77,28 +102,47 @@ def prueba_chi_cuadrado(datos, nombre_muestra):
 
         Oi = obs[i]
 
-        #PE:
+        # Probabilidad Esperada
         Pe = cdf(lim_sup) - cdf(lim_inf)
+        if Pe <= 0: Pe = 1e-9  # Evitar división por cero
 
-        #evitar P=0 en colas extremas
-        if Pe <= 0: Pe = 1e-9
-
-        Ei = N * Pe
+        Ei = N * Pe  # N ya viene ajustado si es M13
 
         # Chi Parcial
-        chi_parcial = ((Oi - Ei) ** 2) / Ei
+        if Ei > 0:
+            chi_parcial = ((Oi - Ei) ** 2) / Ei
+        else:
+            chi_parcial = 0.0
+
         chi_total += chi_parcial
 
-    # Calcular P-Valor
-    gl = num_bins - 1 - k_params  # Grados de libertad
+
+    gl = max(1, num_bins - 1 - k_params)
     alpha = 0.05
     valor_critico = stats.chi2.ppf(1 - alpha, gl)
-    p_valor = 1 - stats.chi2.cdf(chi_total, gl)
+    p_valor = stats.chi2.sf(chi_total, gl)  # sf para precisión extrema
 
-    print(f"RESUMEN CH2, {nombre_muestra}:")
+    print(f"RESUMEN {nombre_muestra}:")
     print(f"  Chi2 Calc:   {chi_total:.4f}")
     print(f"  Chi2 Crít:   {valor_critico:.4f}")
-    print(f"  P-Valor:     {p_valor}")
+    print(f"  P-Valor:     {p_valor:.4e}")
+
+
+
+def main():
+    init_numbers()
+    if not m8: return
+
+    muestras = [
+        (m15, "M15"),
+        (m16, "M16"),  # Ahora usa Exp(ln N)
+        (m8, "M8"),
+        (m13, "M13")  # Ahora limpia 999
+    ]
+
+    for d, n in muestras:
+        prueba_chi_cuadrado(d, n)
+
 
 def main():
     init_numbers()
@@ -106,7 +150,7 @@ def main():
 
     muestras = [
         (m15, "M15", False),  # Uniforme
-        (m16, "M16", False),  # Exponencial
+        (m16, "M16", False),  # GAMMA
         (m8, "M8", False),  # Normal
         (m13, "M13", True)  # Geometrica
     ]
