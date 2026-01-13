@@ -128,22 +128,6 @@ def prueba_chi_cuadrado(datos, nombre_muestra):
     print(f"  P-Valor:     {p_valor:.4e}")
 
 
-
-def main():
-    init_numbers()
-    if not m8: return
-
-    muestras = [
-        (m15, "M15"),
-        (m16, "M16"),  # Ahora usa Exp(ln N)
-        (m8, "M8"),
-        (m13, "M13")  # Ahora limpia 999
-    ]
-
-    for d, n in muestras:
-        prueba_chi_cuadrado(d, n)
-
-
 def main():
     init_numbers()
     if not m8: return
