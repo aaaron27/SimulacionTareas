@@ -3,12 +3,10 @@ import numpy as np
 from scipy import stats
 
 def analizar_muestra_uniforme(numbers, nombre="muestra"):
-    """
-    Análisis completo para distribución uniforme
-    """
     numbers = np.asarray(numbers, dtype=float)
     n = len(numbers)
     bins = int(np.sqrt(n))
+    sigma = np.std(numbers, ddof=1)
     
     # Parámetros
     a = numbers.min()
@@ -34,7 +32,7 @@ def analizar_muestra_uniforme(numbers, nombre="muestra"):
     
     ax1.set_xlabel('x', fontsize=12)
     ax1.set_ylabel('Densidad de Probabilidad', fontsize=12)
-    ax1.set_title(f'PDF - Distribución Uniforme ({nombre})\n$a = {a:.4f}$, $b = {b:.4f}$', 
+    ax1.set_title(f'PDF - Distribución Uniforme ({nombre})\n$a = {a:.4f}$, $b = {b:.4f}$, $σ = {sigma:.4f}$', 
                   fontsize=13, fontweight='bold')
     ax1.legend(fontsize=10)
     ax1.grid(True, alpha=0.3)
@@ -54,7 +52,7 @@ def analizar_muestra_uniforme(numbers, nombre="muestra"):
     
     ax2.set_xlabel('x', fontsize=12)
     ax2.set_ylabel('Probabilidad Acumulada', fontsize=12)
-    ax2.set_title(f'CDF - Distribución Uniforme ({nombre})\n$a = {a:.4f}$, $b = {b:.4f}$', 
+    ax2.set_title(f'CDF - Distribución Uniforme ({nombre})\n$a = {a:.4f}$, $b = {b:.4f}$, $σ = {sigma:.4f}$', 
                   fontsize=13, fontweight='bold')
     ax2.legend(fontsize=10)
     ax2.grid(True, alpha=0.3)
@@ -63,9 +61,6 @@ def analizar_muestra_uniforme(numbers, nombre="muestra"):
     plt.show()
 
 def analizar_muestra_exponencial(numbers, nombre="m16"):
-    """
-    Análisis completo para distribución exponencial
-    """
     numbers = np.asarray(numbers, dtype=float)
     n = len(numbers)
     bins = int(np.sqrt(n))
@@ -73,6 +68,7 @@ def analizar_muestra_exponencial(numbers, nombre="m16"):
     # Parámetros
     beta = np.mean(numbers)
     lambd = 1 / beta
+    sigma = np.std(numbers, ddof=1)
     
     # Crear figura con dos subplots
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
@@ -88,7 +84,7 @@ def analizar_muestra_exponencial(numbers, nombre="m16"):
              label=f'PDF Teórica: $f(x) = \\frac{{1}}{{β}} e^{{-x/β}}$')
     ax1.set_xlabel('x', fontsize=12)
     ax1.set_ylabel('Densidad de Probabilidad', fontsize=12)
-    ax1.set_title(f'PDF - Distribución Exponencial ({nombre})\n$β = {beta:.4f}$, $λ = {lambd:.4f}$', 
+    ax1.set_title(f'PDF - Distribución Exponencial ({nombre})\n$β = {beta:.4f}$, $λ = {lambd:.4f}$, $σ = {sigma:.4f}$', 
                   fontsize=13, fontweight='bold')
     ax1.legend(fontsize=10)
     ax1.grid(True, alpha=0.3)
@@ -104,7 +100,7 @@ def analizar_muestra_exponencial(numbers, nombre="m16"):
              label=f'CDF Teórica: $F(x) = 1 - e^{{-x/β}}$')
     ax2.set_xlabel('x', fontsize=12)
     ax2.set_ylabel('Probabilidad Acumulada', fontsize=12)
-    ax2.set_title(f'CDF - Distribución Exponencial ({nombre})\n$β = {beta:.4f}$', 
+    ax2.set_title(f'CDF - Distribución Exponencial ({nombre})\n$β = {beta:.4f}$, $σ = {sigma:.4f}$', 
                   fontsize=13, fontweight='bold')
     ax2.legend(fontsize=10)
     ax2.grid(True, alpha=0.3)
@@ -113,9 +109,6 @@ def analizar_muestra_exponencial(numbers, nombre="m16"):
     plt.show()
 
 def analizar_muestra_normal(numbers, nombre="m8"):
-    """
-    Análisis completo para distribución normal
-    """
     numbers = np.asarray(numbers, dtype=float)
     n = len(numbers)
     bins = int(np.sqrt(n))
@@ -163,12 +156,10 @@ def analizar_muestra_normal(numbers, nombre="m8"):
     plt.show()
 
 def analizar_muestra_gamma(numbers, nombre="m13"):
-    """
-    Análisis completo para distribución gamma
-    """
     numbers = np.asarray(numbers, dtype=float)
     n = len(numbers)
     bins = int(np.sqrt(n))
+    sigma = np.std(numbers, ddof=1)
     
     # Estimar parámetros usando MLE
     shape, loc, scale = stats.gamma.fit(numbers, floc=0)
@@ -187,7 +178,7 @@ def analizar_muestra_gamma(numbers, nombre="m13"):
              label=f'PDF Teórica: $f(x) = \\frac{{x^{{α-1}} e^{{-x/β}}}}{{Γ(α)β^α}}$')
     ax1.set_xlabel('x', fontsize=12)
     ax1.set_ylabel('Densidad de Probabilidad', fontsize=12)
-    ax1.set_title(f'PDF - Distribución Gamma ({nombre})\n$α = {shape:.4f}$, $β = {scale:.4f}$', 
+    ax1.set_title(f'PDF - Distribución Gamma ({nombre})\n$α = {shape:.4f}$, $β = {scale:.4f}$, $σ = {sigma:.4f}$', 
                   fontsize=13, fontweight='bold')
     ax1.legend(fontsize=9)
     ax1.grid(True, alpha=0.3)
