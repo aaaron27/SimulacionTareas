@@ -210,6 +210,68 @@ def analizar_muestra_gamma(numbers, nombre="m13"):
     
     plt.tight_layout()
     plt.show()
+    
+    
+def cdf_piecewise(x):
+    x = np.asarray(x)
+    F = np.zeros_like(x, dtype=float)
+
+    F[(0 <= x) & (x <= 1)] = 0.5 * x[(0 <= x) & (x <= 1)]
+    F[(1 < x) & (x <= 1.5)] = 0.5
+    F[(1.5 < x) & (x <= 1.875)] = np.exp(x[(1.5 < x) & (x <= 1.875)] - 1.5) - 0.5
+    F[x > 1.875] = np.exp(1.875 - 1.5) - 0.5
+
+    return F
+
+def pdf_piecewise(x):
+    x = np.asarray(x)
+    f = np.zeros_like(x, dtype=float)
+
+    f[(0 <= x) & (x <= 1)] = 0.5
+    f[(1.5 < x) & (x <= 1.875)] = np.exp(1.72*(x[(1.5 < x) & (x <= 1.875)] - 1.5))
+
+    return f
+
+
+def analizar_muestra_piecewise(numbers, nombre="muestra"):
+    numbers = np.asarray(numbers, dtype=float)
+    n = len(numbers)
+    bins = int(np.sqrt(n))
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+
+    # --- PDF ---
+    ax1.hist(numbers, bins=bins, density=True, alpha=0.6,
+             edgecolor='black', label='Histograma')
+
+    x_pdf = np.linspace(0, 2, 400)
+    ax1.plot(x_pdf, pdf_piecewise(x_pdf), 'r-', linewidth=2.5,
+             label='PDF teórica')
+
+    ax1.set_xlabel('x')
+    ax1.set_ylabel('Densidad de Probabilidad')
+    ax1.set_title(f'PDF - Función por partes ({nombre})')
+    ax1.legend()
+    ax1.grid(True, alpha=0.3)
+
+    # --- CDF ---
+    numbers_sorted = np.sort(numbers)
+    Fn = np.arange(1, n + 1) / n
+    F_teorica = cdf_piecewise(numbers_sorted)
+
+    ax2.step(numbers_sorted, Fn, where='post',
+             linewidth=2, label='CDF Empírica')
+    ax2.plot(numbers_sorted, F_teorica, 'r-', linewidth=2.5,
+             label='CDF Teórica')
+
+    ax2.set_xlabel('x')
+    ax2.set_ylabel('Probabilidad Acumulada')
+    ax2.set_title(f'CDF - Función por partes ({nombre})')
+    ax2.legend()
+    ax2.grid(True, alpha=0.3)
+
+    plt.tight_layout()
+    plt.show()
 
 def analizar_muestra_geometrica(numbers, nombre="muestra"):
     """
