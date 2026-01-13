@@ -43,10 +43,11 @@ def prueba_chi_cuadrado(datos, nombre_muestra):
 
     # --- LÓGICA DE DISTRIBUCIONES ---
     if "m15" in nombre_lower:
-        dist_nom = "Uniforme"
-        a, b = np.min(datos), np.max(datos) - np.min(datos)
-        cdf = lambda x: stats.uniform.cdf(x, loc=a, scale=b)
-        k_params = 2  # 2 parámetros estimados (min, max)
+        dist_nom = "Función por partes"
+
+        cdf = lambda x: cdf_piecewise(x)
+
+        k_params = 0  # NO se estiman parámetros
 
     elif "m16" in nombre_lower:
 
@@ -157,12 +158,13 @@ def main():
 
     #grafico_pdf_uniforme(m15)
     #grafico_cdf_uniforme(m15)
-    # analizar_muestra_piecewise(m15)
-    # analizar_muestra_gamma(m16, 'm16')
-    # analizar_muestra_normal(m8, 'm8')
-    # analizar_muestra_exponencial(m13, 'm13')
-    # analizar_muestra_geometrica(m13, 'm13')
-    # analizar_muestra_uniforme(m15, 'm15')
+
+    analizar_muestra_piecewise(m15,'m15')
+    analizar_muestra_gamma(m16, 'm16')
+    analizar_muestra_normal(m8, 'm8')
+    analizar_muestra_exponencial(m13, 'm13')
+    analizar_muestra_geometrica(m13, 'm13')
+    analizar_muestra_uniforme(m15, 'm15')
 
 if __name__ == '__main__':
     main()
