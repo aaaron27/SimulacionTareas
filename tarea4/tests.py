@@ -31,10 +31,16 @@ def init_numbers():
         m16 = [float(i) for i in f.read().splitlines()]
 
 
+import numpy as np
+import scipy.stats as stats
+
+
 def prueba_chi_cuadrado(datos, nombre_muestra):
     datos = np.array(datos)
     N = len(datos)
     nombre_lower = nombre_muestra.lower()
+
+    print(f"\n--- ANALIZANDO: {nombre_muestra} ---")  # Título para separar salidas
 
     # Variables de configuración
     dist_nom = ""
@@ -44,24 +50,34 @@ def prueba_chi_cuadrado(datos, nombre_muestra):
     # --- LÓGICA DE DISTRIBUCIONES ---
     if "m15" in nombre_lower:
         dist_nom = "Función por partes"
-
         cdf = lambda x: cdf_piecewise(x)
+        k_params = 0
 
-        k_params = 0  # NO se estiman parámetros
+        # M15 no estima parámetros, pero podemos ver sus estadísticas básicas
+        print(f"  [Info] Tipo: {dist_nom}")
+        print(f"  [Datos] Media Muestral: {np.mean(datos):.4f}")
+        print(f"  [Datos] Varianza Muestral: {np.var(datos):.4f}")
+        print(f"  [Params] No se estiman parámetros (fijos en cdf_piecewise).")
 
     elif "m16" in nombre_lower:
-
         dist_nom = "Gamma"
-
 
         media = np.mean(datos)
         var = np.var(datos)
         std = np.std(datos)
+
         alpha_est = (media / std) ** 2
         scale_est = var / media
-        cdf = lambda x: stats.gamma.cdf(x, a=alpha_est, loc=0, scale=scale_est)
 
+        cdf = lambda x: stats.gamma.cdf(x, a=alpha_est, loc=0, scale=scale_est)
         k_params = 2
+
+        # IMPRIMIR VARIABLES M16
+        print(f"  [Info] Tipo: {dist_nom}")
+        print(f"  [Datos] Media: {media:.4f}")
+        print(f"  [Datos] Varianza: {var:.4f}")
+        print(f"  [Params] Alpha estimado (forma): {alpha_est:.4f}")
+        print(f"  [Params] Scale estimado (escala): {scale_est:.4f}")
 
     elif "m8" in nombre_lower:
         dist_nom = "Normal"
@@ -69,33 +85,45 @@ def prueba_chi_cuadrado(datos, nombre_muestra):
         cdf = lambda x: stats.norm.cdf(x, loc=mu, scale=sigma)
         k_params = 2
 
+        # IMPRIMIR VARIABLES M8
+        print(f"  [Info] Tipo: {dist_nom}")
+        print(f"  [Params] Mu (Media): {mu:.4f}")
+        print(f"  [Params] Sigma (Desv. Std): {sigma:.4f}")
+
     elif "m13" in nombre_lower:
         dist_nom = "Geométrica"
 
         conteo_999 = np.sum(datos == 999)
-
+        N_original = N
         N = N - conteo_999
-        print(f"  [M13] Ajuste: Se ignoran {conteo_999} valores '999' para el cálculo.")
 
         datos_validos = datos[datos != 999]
-        p = 1 / np.mean(datos_validos)
+        media_valida = np.mean(datos_validos)
+        p = 1 / media_valida
 
         cdf = lambda x: stats.geom.cdf(x, p=p, loc=0)
         k_params = 1
+
+        # IMPRIMIR VARIABLES M13
+        print(f"  [Info] Tipo: {dist_nom}")
+        print(f"  [Ajuste] 999s ignorados: {conteo_999}")
+        print(f"  [Ajuste] N ajustado: {N} (de {N_original})")
+        print(f"  [Datos] Media (sin 999): {media_valida:.4f}")
+        print(f"  [Params] p estimado: {p:.4f}")
+
     else:
         print(f"Distribución no identificada para {nombre_muestra}.")
         return
 
+    # --- RESTO DEL CÓDIGO (Histograma y Chi2) ---
     num_bins = 7
     obs, bordes = np.histogram(datos, bins=num_bins)
 
     if "m13" in nombre_lower:
         obs[-1] = obs[-1] - conteo_999
-        if obs[-1] < 0: obs[-1] = 0  # Seguridad
+        if obs[-1] < 0: obs[-1] = 0
 
-    # --- CALCULO CHI-CUADRADO ---
     chi_total = 0
-
 
     for i in range(num_bins):
         lim_inf = bordes[i]
@@ -103,13 +131,10 @@ def prueba_chi_cuadrado(datos, nombre_muestra):
 
         Oi = obs[i]
 
-        # Probabilidad Esperada
         Pe = cdf(lim_sup) - cdf(lim_inf)
-        if Pe <= 0: Pe = 1e-9  # Evitar división por cero
+        if Pe <= 0: Pe = 1e-9
+        Ei = N * Pe
 
-        Ei = N * Pe  # N ya viene ajustado si es M13
-
-        # Chi Parcial
         if Ei > 0:
             chi_parcial = ((Oi - Ei) ** 2) / Ei
         else:
@@ -121,12 +146,15 @@ def prueba_chi_cuadrado(datos, nombre_muestra):
     gl = max(1, num_bins - 1 - k_params)
     alpha = 0.05
     valor_critico = stats.chi2.ppf(1 - alpha, gl)
-    p_valor = stats.chi2.sf(chi_total, gl)  # sf para precisión extrema
+    p_valor = stats.chi2.sf(chi_total, gl)
 
-    print(f"RESUMEN {nombre_muestra}:")
-    print(f"  Chi2 Calc:   {chi_total:.4f}")
-    print(f"  Chi2 Crít:   {valor_critico:.4f}")
-    print(f"  P-Valor:     {p_valor:.4e}")
+    print("-" * 60)
+    print(f"RESUMEN FINAL {nombre_muestra}:")
+    print(f"  Grados Libertad (gl): {gl}")
+    print(f"  Chi2 Calculado:       {chi_total:.4f}")
+    print(f"  Chi2 Crítico:         {valor_critico:.4f}")
+    print(f"  P-Valor:              {p_valor:.4e}")
+
 
 
 def main():
