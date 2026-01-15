@@ -46,21 +46,21 @@ def simular(permutation: list, minimizar_media: bool):
 
 def minimizar_varianza(permutaciones):
     result = []
-    media = inf
+    varianza = inf
     for p in permutaciones:
-        media_simulada = simular(p)
-        if media > media_simulada:
-            media = media_simulada
+        varianza_simulada = simular(p, False)
+        if varianza > varianza_simulada:
+            varianza = varianza_simulada
             result = p
 
-    result.insert(0, media)
+    result.insert(0, varianza)
     return result
 
 def minimizar_media(permutaciones):
     result = []
     media = inf
     for p in permutaciones:
-        media_simulada = simular(p)
+        media_simulada = simular(p, True)
         if media > media_simulada:
             media = media_simulada
             result = p
