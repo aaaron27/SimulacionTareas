@@ -2,6 +2,7 @@ import numpy as np
 from itertools import product
 from math import inf
 from dataclasses import dataclass
+from random import random
 
 PATH_MUESTRA_POISSON = 'data/muestra_poisson.txt'
 
@@ -13,10 +14,8 @@ MEDIA_FREIDORA = 3
 MEDIA_POSTRES = 0.667
 MEDIA_POLLO = 10
 
-PROB_REFRESCOS = 0.9
-PROB_FREIDORA = 0.7
-PROB_POSTRES = 0.7
-PROB_POLLO = 0.3
+# refrescos, freidora, postres, pollo
+PROBABILIDADES = [0.9, 0.7, 0.25, 0.3]
     
 @dataclass
 class Config:
@@ -28,6 +27,15 @@ class Config:
 
 def get_cant_ordenes(n: int, p: float):
     return np.random.binomial(5, 0.4)
+
+def get_estaciones() -> list[int]:
+    estaciones_deseadas = [False]*len(PROBABILIDADES)
+
+    for i in range(len(PROBABILIDADES)):
+        if random() <= PROBABILIDADES[i]:
+            estaciones_deseadas[i] = True
+        
+    return estaciones_deseadas
 
 def generar_muestra_poisson(minutos_limite: float) -> None:
     c = 0
