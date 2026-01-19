@@ -33,6 +33,18 @@ def get_cant_ordenes(n: int, p: float):
 def get_random_tiempo_cajas():
     return np.random.exponential(MEDIA_CAJAS)
 
+def get_random_tiempo_refrescos():
+    return np.random.exponential(MEDIA_REFRESCOS)
+
+def get_random_tiempo_freidora():
+    return np.random.normal(MEDIA_FREIDORA)
+
+def get_random_tiempo_postres():
+    return np.random.binomial(5, 0.6)
+
+def get_random_tiempo_pollo():
+    return np.random.geometric(0.1)
+
 def get_estaciones():
     estaciones_deseadas = [False]*len(PROBABILIDADES)
 
@@ -120,38 +132,158 @@ def etapa_1(n_cajas: int):
         "Hora fin": hora_fin
     })
 
-    print(df)
+    #print(df)
 
     return hora_fin
 
-def etapa_2(hora_llegada: list[int]) -> list[int]:
-    raise NotImplementedError('h')
+def etapa_2(permutacion, hora_llegada: list[int]) -> list[int]:
+    hora_llegada_checked: list[tuple[float, list[bool]]] = []
+    for h in hora_llegada:
+        cant_ordenes = get_cant_ordenes(5, 2/5)
+        gustos = get_estaciones()
+
+        for _ in range(cant_ordenes):
+            flag = False
+            for i in range(len(gustos)):
+                if gustos[i]:
+                    hora_llegada_checked.append((h, i))
+                    flag = True
+            
+            if not flag:
+                hora_llegada_checked.append((h, -1))
+        
+    hora_llegada_sorted = sorted(hora_llegada_checked, key=lambda x: x[0])
+
+    servidores_refrescos = [0]*permutacion[1]
+    servidores_freidoras = [0]*permutacion[2]
+    servidores_postres = [0]*permutacion[3]
+    servidores_pollos = [0]*permutacion[4]
+
+    hora_inicio_atencion = [0]*len(hora_llegada_sorted)
+    servidores_usados = [0]*len(hora_llegada_sorted)
+    hora_salida = [0]*len(hora_llegada_sorted)
+    tiempo_atencion = [0]*len(hora_llegada_sorted)
+    tiempo_sis_2 = [0]*len(hora_llegada_sorted)
+    tiempo_total = [0]*len(hora_llegada_sorted)
+    servicio = [0]*len(hora_llegada_sorted)
+
+    for i in range(len(hora_llegada_sorted)):
+        hora, gusto = hora_llegada_sorted[i]
+
+        if gusto == -1:
+            hora_inicio_atencion[i] = hora
+            servidores_usados[i] = None
+            tiempo_atencion[i] = 0
+            hora_salida[i] = hora
+            tiempo_sis_2[i] = 0
+            tiempo_total[i] = h + hora_salida[i]
+            servicio[i] = None
+        else:
+            match gusto:
+                case 0:
+                    tiempo_atencion[i] = get_random_tiempo_refrescos()
+                    servidores_usados[i] = get_servidor_disponible(servidores_refrescos, h)
+
+                    hora_inicio_atencion[i] = max(
+                        servidores_refrescos[servidores_usados[i]],
+                        hora
+                    )
+
+                    servidores_refrescos[servidores_usados[i]] = hora_inicio_atencion[i] + tiempo_atencion[i]
+                    hora_salida[i] = h + tiempo_atencion[i]
+                    tiempo_sis_2[i] = hora_salida[i] - h
+                    tiempo_total[i] = h + hora_salida[i]
+                    servicio[i] = 'ref'
+                case 1:
+                    tiempo_atencion[i] = get_random_tiempo_freidora()
+                    servidores_usados[i] = get_servidor_disponible(servidores_freidoras, h)
+
+                    hora_inicio_atencion[i] = max(
+                        servidores_freidoras[servidores_usados[i]],
+                        hora
+                    )
+
+                    servidores_freidoras[servidores_usados[i]] = hora_inicio_atencion[i] + tiempo_atencion[i]
+                    hora_salida[i] = h + tiempo_atencion[i]
+                    tiempo_sis_2[i] = hora_salida[i] - h
+                    tiempo_total[i] = h + hora_salida[i]
+                    servicio[i] = 'frei'
+                case 2:
+                    tiempo_atencion[i] = get_random_tiempo_postres()
+                    servidores_usados[i] = get_servidor_disponible(servidores_postres, h)
+
+                    hora_inicio_atencion[i] = max(
+                        servidores_postres[servidores_usados[i]],
+                        hora
+                    )
+
+                    servidores_postres[servidores_usados[i]] = hora_inicio_atencion[i] + tiempo_atencion[i]
+                    hora_salida[i] = h + tiempo_atencion[i]
+                    tiempo_sis_2[i] = hora_salida[i] - h
+                    tiempo_total[i] = h + hora_salida[i]
+
+                    servicio[i] = 'post'
+                case 3:
+                    tiempo_atencion[i] = get_random_tiempo_postres()
+                    servidores_usados[i] = get_servidor_disponible(servidores_pollos, h)
+
+                    hora_inicio_atencion[i] = max(
+                        servidores_pollos[servidores_usados[i]],
+                        hora
+                    )
+
+                    servidores_pollos[servidores_usados[i]] = hora_inicio_atencion[i] + tiempo_atencion[i]
+                    hora_salida[i] = h + tiempo_atencion[i]
+                    tiempo_sis_2[i] = hora_salida[i] - h
+                    tiempo_total[i] = h + hora_salida[i]
+
+                    servicio[i] = 'pol'
+
+    df = pd.DataFrame({
+        "hora de llegada": hora_llegada_sorted,
+        "inicio atencion": hora_inicio_atencion,
+        "servidor": servidores_usados,
+        "servicio": servicio,
+        "hora salida": hora_salida,
+        "tiempoSIS2": tiempo_sis_2,
+        "Total": tiempo_total
+    })
+
+    #print(df)
+
+    return tiempo_total
 
 def simular(permutation: list[int]) -> tuple[float, float]:
     hora_fin_etapa_1 = etapa_1(permutation[0])
-    hora_sistema_total = etapa_2(hora_fin_etapa_1)
+    hora_sistema_total = etapa_2(permutation, hora_fin_etapa_1)
 
     return np.mean(hora_sistema_total), np.var(hora_sistema_total)
 
 def minimizar(permutaciones: list[list[int]]) -> tuple[float, float, Config, Config]:
     media_result = [-1]*5
     varianza_result = [-1]*5
-    media = inf
-    varianza = inf
+    media_media = inf
+    varianza_media = inf
 
-    #for _ in range(REPETICIONES_TOTALES):
-
-    simular([6,2,2,1,1])
-    # for p in permutaciones:
-    #     media_simulada, varianza_simulada = simular(p)
-    #     if media > media_simulada:
-    #         media = media_simulada
-    #         media_result = p
-    #     if varianza > varianza_simulada:
-    #         varianza = varianza_simulada
-    #         varianza_result = p
+    #media_media, varianza_media = simular([6,2,2,1,1])
+    for p in permutaciones:
+        media_local = []
+        varianza_local = []
+        for _ in range(REPETICIONES_TOTALES):
+            media_simulada, varianza_simulada = simular(p)
+            media_local.append(media_simulada)
+            varianza_local.append(varianza_simulada)
+        
+        media_local_aux = np.mean(media_local)
+        varianza_local_aux = np.var(varianza_local)
+        if media_media > media_local_aux:
+            media_media = media_local_aux
+            media_result = p
+        if varianza_media > varianza_local_aux:
+            varianza_media = varianza_local_aux
+            varianza_result = p
     
-    return media, varianza, Config(*media_result), Config(*varianza_result)
+    return media_media, varianza_media, Config(*media_result), Config(*varianza_result)
 
 def main():
     permutaciones = generar_permutaciones(EMPLEADOS_TOTALES)
