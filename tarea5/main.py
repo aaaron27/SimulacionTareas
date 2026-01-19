@@ -134,11 +134,11 @@ def etapa_1(n_cajas: int):
 
     #print(df)
 
-    return hora_fin
+    return hora_fin, tiempo_sistema1
 
-def etapa_2(permutacion, hora_llegada: list[int]) -> list[int]:
-    hora_llegada_checked: list[tuple[float, list[bool]]] = []
-    for h in hora_llegada:
+def etapa_2(permutacion, hora_llegada: list[int], tiempo_sis_1: list[float]) -> list[int]:
+    hora_llegada_checked: list[tuple[float, list[bool], list[float]]] = []
+    for i in range(len(hora_llegada)):
         cant_ordenes = get_cant_ordenes(5, 2/5)
         gustos = get_estaciones()
 
@@ -146,11 +146,11 @@ def etapa_2(permutacion, hora_llegada: list[int]) -> list[int]:
             flag = False
             for i in range(len(gustos)):
                 if gustos[i]:
-                    hora_llegada_checked.append((h, i))
+                    hora_llegada_checked.append((hora_llegada[i], i, tiempo_sis_1[i]))
                     flag = True
             
             if not flag:
-                hora_llegada_checked.append((h, -1))
+                hora_llegada_checked.append((hora_llegada[i], -1, tiempo_sis_1[i]))
         
     hora_llegada_sorted = sorted(hora_llegada_checked, key=lambda x: x[0])
 
@@ -168,7 +168,7 @@ def etapa_2(permutacion, hora_llegada: list[int]) -> list[int]:
     servicio = [0]*len(hora_llegada_sorted)
 
     for i in range(len(hora_llegada_sorted)):
-        hora, gusto = hora_llegada_sorted[i]
+        hora, gusto, tiempo_sis_1_i = hora_llegada_sorted[i]
 
         if gusto == -1:
             hora_inicio_atencion[i] = hora
@@ -176,13 +176,13 @@ def etapa_2(permutacion, hora_llegada: list[int]) -> list[int]:
             tiempo_atencion[i] = 0
             hora_salida[i] = hora
             tiempo_sis_2[i] = 0
-            tiempo_total[i] = h + hora_salida[i]
+            tiempo_total[i] = tiempo_sis_2[i] + tiempo_sis_1_i
             servicio[i] = None
         else:
             match gusto:
                 case 0:
                     tiempo_atencion[i] = get_random_tiempo_refrescos()
-                    servidores_usados[i] = get_servidor_disponible(servidores_refrescos, h)
+                    servidores_usados[i] = get_servidor_disponible(servidores_refrescos, hora)
 
                     hora_inicio_atencion[i] = max(
                         servidores_refrescos[servidores_usados[i]],
@@ -190,13 +190,13 @@ def etapa_2(permutacion, hora_llegada: list[int]) -> list[int]:
                     )
 
                     servidores_refrescos[servidores_usados[i]] = hora_inicio_atencion[i] + tiempo_atencion[i]
-                    hora_salida[i] = h + tiempo_atencion[i]
-                    tiempo_sis_2[i] = hora_salida[i] - h
-                    tiempo_total[i] = h + hora_salida[i]
+                    hora_salida[i] = hora + tiempo_atencion[i]
+                    tiempo_sis_2[i] = hora_salida[i] - hora
+                    tiempo_total[i] = tiempo_sis_2[i] + tiempo_sis_1_i
                     servicio[i] = 'ref'
                 case 1:
                     tiempo_atencion[i] = get_random_tiempo_freidora()
-                    servidores_usados[i] = get_servidor_disponible(servidores_freidoras, h)
+                    servidores_usados[i] = get_servidor_disponible(servidores_freidoras, hora)
 
                     hora_inicio_atencion[i] = max(
                         servidores_freidoras[servidores_usados[i]],
@@ -204,13 +204,13 @@ def etapa_2(permutacion, hora_llegada: list[int]) -> list[int]:
                     )
 
                     servidores_freidoras[servidores_usados[i]] = hora_inicio_atencion[i] + tiempo_atencion[i]
-                    hora_salida[i] = h + tiempo_atencion[i]
-                    tiempo_sis_2[i] = hora_salida[i] - h
-                    tiempo_total[i] = h + hora_salida[i]
+                    hora_salida[i] = hora + tiempo_atencion[i]
+                    tiempo_sis_2[i] = hora_salida[i] - hora
+                    tiempo_total[i] = tiempo_sis_2[i] + tiempo_sis_1_i
                     servicio[i] = 'frei'
                 case 2:
                     tiempo_atencion[i] = get_random_tiempo_postres()
-                    servidores_usados[i] = get_servidor_disponible(servidores_postres, h)
+                    servidores_usados[i] = get_servidor_disponible(servidores_postres, hora)
 
                     hora_inicio_atencion[i] = max(
                         servidores_postres[servidores_usados[i]],
@@ -218,14 +218,14 @@ def etapa_2(permutacion, hora_llegada: list[int]) -> list[int]:
                     )
 
                     servidores_postres[servidores_usados[i]] = hora_inicio_atencion[i] + tiempo_atencion[i]
-                    hora_salida[i] = h + tiempo_atencion[i]
-                    tiempo_sis_2[i] = hora_salida[i] - h
-                    tiempo_total[i] = h + hora_salida[i]
+                    hora_salida[i] = hora + tiempo_atencion[i]
+                    tiempo_sis_2[i] = hora_salida[i] - hora
+                    tiempo_total[i] = tiempo_sis_2[i] + tiempo_sis_1_i
 
                     servicio[i] = 'post'
                 case 3:
                     tiempo_atencion[i] = get_random_tiempo_postres()
-                    servidores_usados[i] = get_servidor_disponible(servidores_pollos, h)
+                    servidores_usados[i] = get_servidor_disponible(servidores_pollos, hora)
 
                     hora_inicio_atencion[i] = max(
                         servidores_pollos[servidores_usados[i]],
@@ -233,9 +233,9 @@ def etapa_2(permutacion, hora_llegada: list[int]) -> list[int]:
                     )
 
                     servidores_pollos[servidores_usados[i]] = hora_inicio_atencion[i] + tiempo_atencion[i]
-                    hora_salida[i] = h + tiempo_atencion[i]
-                    tiempo_sis_2[i] = hora_salida[i] - h
-                    tiempo_total[i] = h + hora_salida[i]
+                    hora_salida[i] = hora + tiempo_atencion[i]
+                    tiempo_sis_2[i] = hora_salida[i] - hora
+                    tiempo_total[i] = tiempo_sis_2[i] + tiempo_sis_1_i
 
                     servicio[i] = 'pol'
 
@@ -249,13 +249,13 @@ def etapa_2(permutacion, hora_llegada: list[int]) -> list[int]:
         "Total": tiempo_total
     })
 
-    #print(df)
+    print(df)
 
     return tiempo_total
 
 def simular(permutation: list[int]) -> tuple[float, float]:
-    hora_fin_etapa_1 = etapa_1(permutation[0])
-    hora_sistema_total = etapa_2(permutation, hora_fin_etapa_1)
+    hora_fin_etapa_1, tiempo_sis_1 = etapa_1(permutation[0])
+    hora_sistema_total = etapa_2(permutation, hora_fin_etapa_1, tiempo_sis_1)
 
     return np.mean(hora_sistema_total), np.var(hora_sistema_total)
 
@@ -265,23 +265,23 @@ def minimizar(permutaciones: list[list[int]]) -> tuple[float, float, Config, Con
     media_media = inf
     varianza_media = inf
 
-    #media_media, varianza_media = simular([6,2,2,1,1])
-    for p in permutaciones:
-        media_local = []
-        varianza_local = []
-        for _ in range(REPETICIONES_TOTALES):
-            media_simulada, varianza_simulada = simular(p)
-            media_local.append(media_simulada)
-            varianza_local.append(varianza_simulada)
+    media_media, varianza_media = simular([4,2,2,2,2])
+    # for p in permutaciones:
+    #     media_local = []
+    #     varianza_local = []
+    #     for _ in range(REPETICIONES_TOTALES):
+    #         media_simulada, varianza_simulada = simular(p)
+    #         media_local.append(media_simulada)
+    #         varianza_local.append(varianza_simulada)
         
-        media_local_aux = np.mean(media_local)
-        varianza_local_aux = np.var(varianza_local)
-        if media_media > media_local_aux:
-            media_media = media_local_aux
-            media_result = p
-        if varianza_media > varianza_local_aux:
-            varianza_media = varianza_local_aux
-            varianza_result = p
+    #     media_local_aux = np.mean(media_local)
+    #     varianza_local_aux = np.var(varianza_local)
+    #     if media_media > media_local_aux:
+    #         media_media = media_local_aux
+    #         media_result = p
+    #     if varianza_media > varianza_local_aux:
+    #         varianza_media = varianza_local_aux
+    #         varianza_result = p
     
     return media_media, varianza_media, Config(*media_result), Config(*varianza_result)
 
