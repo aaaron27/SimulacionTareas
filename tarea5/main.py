@@ -5,6 +5,9 @@ from dataclasses import dataclass
 from random import random
 import pandas as pd
 
+pd.set_option('display.max_columns', None)
+pd.set_option('display.float_format', '{:.4f}'.format)
+
 PATH_MUESTRA_POISSON = 'data/muestra_poisson.txt'
 
 EMPLEADOS_TOTALES = 12
@@ -37,13 +40,13 @@ def get_random_tiempo_refrescos():
     return np.random.exponential(MEDIA_REFRESCOS)
 
 def get_random_tiempo_freidora():
-    return np.random.normal(MEDIA_FREIDORA)
+    return max(1, np.random.normal(3))
 
 def get_random_tiempo_postres():
     return np.random.binomial(5, 0.6)
 
 def get_random_tiempo_pollo():
-    return np.random.geometric(0.1)
+    return np.random.geometric(p=0.1)
 
 def get_estaciones():
     estaciones_deseadas = [False]*len(PROBABILIDADES)
@@ -119,6 +122,7 @@ def etapa_1(n_cajas: int):
             servidores_cajas_disponibles[servidor_usado[i]], 
             hora_llegada[i]
         )
+
         servidores_cajas_disponibles[servidor_usado[i]] = hora_inicio_atencion[i] + tiempo_atencion[i]
         hora_fin[i] = hora_llegada[i] + tiempo_atencion[i]
         tiempo_sistema1[i] = hora_fin[i] - hora_llegada[i]
@@ -132,9 +136,7 @@ def etapa_1(n_cajas: int):
         "Hora fin": hora_fin
     })
 
-    #print(df)
-
-    return hora_fin, tiempo_sistema1
+    return hora_fin, tiempo_sistema1, df
 
 def etapa_2(permutacion, hora_llegada: list[int], tiempo_sis_1: list[float]) -> list[int]:
     hora_llegada_checked: list[tuple[float, list[bool], list[float]]] = []
@@ -172,7 +174,7 @@ def etapa_2(permutacion, hora_llegada: list[int], tiempo_sis_1: list[float]) -> 
 
         if gusto == -1:
             hora_inicio_atencion[i] = hora
-            servidores_usados[i] = None
+            servidores_usados[i] = -1
             tiempo_atencion[i] = 0
             hora_salida[i] = hora
             tiempo_sis_2[i] = 0
@@ -190,8 +192,8 @@ def etapa_2(permutacion, hora_llegada: list[int], tiempo_sis_1: list[float]) -> 
                     )
 
                     servidores_refrescos[servidores_usados[i]] = hora_inicio_atencion[i] + tiempo_atencion[i]
-                    hora_salida[i] = hora + tiempo_atencion[i]
-                    tiempo_sis_2[i] = hora_salida[i] - hora
+                    hora_salida[i] = hora_inicio_atencion[i] + tiempo_atencion[i]
+                    tiempo_sis_2[i] = hora_salida[i] - hora_inicio_atencion[i]
                     tiempo_total[i] = tiempo_sis_2[i] + tiempo_sis_1_i
                     servicio[i] = 'ref'
                 case 1:
@@ -204,8 +206,8 @@ def etapa_2(permutacion, hora_llegada: list[int], tiempo_sis_1: list[float]) -> 
                     )
 
                     servidores_freidoras[servidores_usados[i]] = hora_inicio_atencion[i] + tiempo_atencion[i]
-                    hora_salida[i] = hora + tiempo_atencion[i]
-                    tiempo_sis_2[i] = hora_salida[i] - hora
+                    hora_salida[i] = hora_inicio_atencion[i] + tiempo_atencion[i]
+                    tiempo_sis_2[i] = hora_salida[i] - hora_inicio_atencion[i]
                     tiempo_total[i] = tiempo_sis_2[i] + tiempo_sis_1_i
                     servicio[i] = 'frei'
                 case 2:
@@ -218,8 +220,8 @@ def etapa_2(permutacion, hora_llegada: list[int], tiempo_sis_1: list[float]) -> 
                     )
 
                     servidores_postres[servidores_usados[i]] = hora_inicio_atencion[i] + tiempo_atencion[i]
-                    hora_salida[i] = hora + tiempo_atencion[i]
-                    tiempo_sis_2[i] = hora_salida[i] - hora
+                    hora_salida[i] = hora_inicio_atencion[i] + tiempo_atencion[i]
+                    tiempo_sis_2[i] = hora_salida[i] - hora_inicio_atencion[i]
                     tiempo_total[i] = tiempo_sis_2[i] + tiempo_sis_1_i
 
                     servicio[i] = 'post'
@@ -233,8 +235,8 @@ def etapa_2(permutacion, hora_llegada: list[int], tiempo_sis_1: list[float]) -> 
                     )
 
                     servidores_pollos[servidores_usados[i]] = hora_inicio_atencion[i] + tiempo_atencion[i]
-                    hora_salida[i] = hora + tiempo_atencion[i]
-                    tiempo_sis_2[i] = hora_salida[i] - hora
+                    hora_salida[i] = hora_inicio_atencion[i] + tiempo_atencion[i]
+                    tiempo_sis_2[i] = hora_salida[i] - hora_inicio_atencion[i]
                     tiempo_total[i] = tiempo_sis_2[i] + tiempo_sis_1_i
 
                     servicio[i] = 'pol'
@@ -243,21 +245,20 @@ def etapa_2(permutacion, hora_llegada: list[int], tiempo_sis_1: list[float]) -> 
         "hora de llegada": hora_llegada_sorted,
         "inicio atencion": hora_inicio_atencion,
         "servidor": servidores_usados,
+        "tiempo atencion": tiempo_atencion,
         "servicio": servicio,
         "hora salida": hora_salida,
         "tiempoSIS2": tiempo_sis_2,
         "Total": tiempo_total
     })
 
-    print(df)
-
-    return tiempo_total
+    return tiempo_total, df
 
 def simular(permutation: list[int]) -> tuple[float, float]:
-    hora_fin_etapa_1, tiempo_sis_1 = etapa_1(permutation[0])
-    hora_sistema_total = etapa_2(permutation, hora_fin_etapa_1, tiempo_sis_1)
+    hora_fin_etapa_1, tiempo_sis_1, df1 = etapa_1(permutation[0])
+    hora_sistema_total, df2 = etapa_2(permutation, hora_fin_etapa_1, tiempo_sis_1)
 
-    return np.mean(hora_sistema_total), np.var(hora_sistema_total)
+    return np.mean(hora_sistema_total), np.var(hora_sistema_total), df1, df2
 
 def minimizar(permutaciones: list[list[int]]) -> tuple[float, float, Config, Config]:
     media_result = [-1]*5
@@ -265,24 +266,42 @@ def minimizar(permutaciones: list[list[int]]) -> tuple[float, float, Config, Con
     media_media = inf
     varianza_media = inf
 
-    media_media, varianza_media = simular([4,2,2,2,2])
-    # for p in permutaciones:
-    #     media_local = []
-    #     varianza_local = []
-    #     for _ in range(REPETICIONES_TOTALES):
-    #         media_simulada, varianza_simulada = simular(p)
-    #         media_local.append(media_simulada)
-    #         varianza_local.append(varianza_simulada)
+    # tablas
+    df1_media = []
+    df2_media = []
+    df1_varianza = []
+    df2_varianza = []
+
+    for p in permutaciones:
+        media_local = []
+        varianza_local = []
+        for _ in range(REPETICIONES_TOTALES):
+            media_simulada, varianza_simulada, df1, df2 = simular(p)
+            media_local.append(media_simulada)
+            varianza_local.append(varianza_simulada)
         
-    #     media_local_aux = np.mean(media_local)
-    #     varianza_local_aux = np.var(varianza_local)
-    #     if media_media > media_local_aux:
-    #         media_media = media_local_aux
-    #         media_result = p
-    #     if varianza_media > varianza_local_aux:
-    #         varianza_media = varianza_local_aux
-    #         varianza_result = p
+        media_local_aux = np.mean(media_local)
+        varianza_local_aux = np.var(varianza_local)
+
+        if media_media > media_local_aux:
+            media_media = media_local_aux
+            media_result = p
+            df1_media = df1
+            df2_media = df2
+        if varianza_media > varianza_local_aux:
+            varianza_media = varianza_local_aux
+            varianza_result = p
+            df1_varianza = df1
+            df2_varianza = df2
     
+    print("Tabla Media")
+    print(df1_media)
+    print(df2_media)
+    
+    print("\nTabla Varianza")
+    print(df1_varianza)
+    print(df2_varianza)
+
     return media_media, varianza_media, Config(*media_result), Config(*varianza_result)
 
 def main():
