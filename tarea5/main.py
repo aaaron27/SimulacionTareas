@@ -57,17 +57,6 @@ def get_estaciones():
         
     return estaciones_deseadas
 
-def generar_muestra_poisson(minutos_limite: float):
-    c = 0
-    res = ''
-    while (c <= minutos_limite):
-        poisson = np.random.poisson(3)
-        c += poisson
-        res += str(poisson) + '\n'
-    
-    with open(PATH_MUESTRA_POISSON, 'w') as f:
-        f.write(res)
-
 def generar_permutaciones(empleados: int) -> list[list[int]]:
     values = np.arange(1, empleados)
     return [
@@ -76,12 +65,16 @@ def generar_permutaciones(empleados: int) -> list[list[int]]:
     ]
 
 def calc_hora_llegada() -> list[int]:
+    minutos_limite = 480 # 8h = 480min
+    c = 0
     hora_llegada = []
-    with open(PATH_MUESTRA_POISSON, 'r') as f:
-        nums = f.read().split('\n')
-        hora_llegada.append(int(nums[0]))
-        for i in range(1, len(nums)-1):
-            hora_llegada.append(hora_llegada[i-1] + int(nums[i]))
+    while (c < minutos_limite):
+        c += np.random.poisson(3)
+
+        if c > minutos_limite:
+            break
+
+        hora_llegada.append(c)
         
     return hora_llegada
 
@@ -245,8 +238,8 @@ def etapa_2(permutacion, hora_llegada: list[int], tiempo_sis_1: list[float]) -> 
         "hora de llegada": hora_llegada_sorted,
         "inicio atencion": hora_inicio_atencion,
         "servidor": servidores_usados,
-        "tiempo atencion": tiempo_atencion,
         "servicio": servicio,
+        "tiempo atencion": tiempo_atencion,
         "hora salida": hora_salida,
         "tiempoSIS2": tiempo_sis_2,
         "Total": tiempo_total
