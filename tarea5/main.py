@@ -1,9 +1,16 @@
+import math
+from typing import Tuple
+
 import numpy as np
 from itertools import product
-from math import inf
+from math import inf, sqrt, pi, exp
 from dataclasses import dataclass
 from random import random
 import pandas as pd
+from numpy import floating
+from pandas import DataFrame
+
+from simpson import simpson
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.float_format', '{:.4f}'.format)
@@ -11,7 +18,7 @@ pd.set_option('display.float_format', '{:.4f}'.format)
 PATH_MUESTRA_POISSON = 'data/muestra_poisson.txt'
 
 EMPLEADOS_TOTALES = 12
-REPETICIONES_TOTALES = 1000
+REPETICIONES_TOTALES = 100
 
 MEDIA_CAJAS = 2.5
 MEDIA_REFRESCOS = 0.75
@@ -21,7 +28,15 @@ MEDIA_POLLO = 10
 
 # refrescos, freidora, postres, pollo
 PROBABILIDADES = [0.9, 0.7, 0.25, 0.3]
-    
+
+def normal_pdf(x, mu, sigma):
+    part1 = 1 / (sigma * math.sqrt(2 * math.pi))
+    part2 = math.exp(-0.5 * ((x - mu) / sigma)**2)
+    return part1 * part2
+
+def normal_cdf(x, mu=3, sigma=1):
+    return simpson(lambda t: normal_pdf(t, mu, sigma), mu - 5 * sigma, x, n=50)
+
 @dataclass
 class Config:
     cajas: int
@@ -40,7 +55,15 @@ def get_random_tiempo_refrescos():
     return np.random.exponential(MEDIA_REFRESCOS)
 
 def get_random_tiempo_freidora():
-    return max(1, np.random.normal(3))
+    u = random()
+    low, high = 0, 10
+    for _ in range(15):
+        mid = (low + high) / 2
+        if normal_cdf(mid) < u:
+            low = mid
+        else:
+            high = mid
+    return max(1, low)
 
 def get_random_tiempo_postres():
     return np.random.binomial(5, 0.6)
@@ -54,7 +77,7 @@ def get_estaciones():
     for i in range(len(PROBABILIDADES)):
         if random() <= PROBABILIDADES[i]:
             estaciones_deseadas[i] = True
-        
+
     return estaciones_deseadas
 
 def generar_permutaciones(empleados: int) -> list[list[int]]:
@@ -75,7 +98,7 @@ def calc_hora_llegada() -> list[int]:
             break
 
         hora_llegada.append(c)
-        
+
     return hora_llegada
 
 def get_servidor_disponible(servidores: list[float], tiempo: float) -> int:
@@ -112,14 +135,14 @@ def etapa_1(n_cajas: int):
         servidor_usado[i] = get_servidor_disponible(servidores_cajas_disponibles, hora_llegada[i])
 
         hora_inicio_atencion[i] = max(
-            servidores_cajas_disponibles[servidor_usado[i]], 
+            servidores_cajas_disponibles[servidor_usado[i]],
             hora_llegada[i]
         )
 
         servidores_cajas_disponibles[servidor_usado[i]] = hora_inicio_atencion[i] + tiempo_atencion[i]
         hora_fin[i] = hora_llegada[i] + tiempo_atencion[i]
         tiempo_sistema1[i] = hora_fin[i] - hora_llegada[i]
-    
+
     df = pd.DataFrame({
         "Hora llegada": hora_llegada,
         "Hora inicio atención": hora_inicio_atencion,
@@ -132,22 +155,19 @@ def etapa_1(n_cajas: int):
     return hora_fin, tiempo_sistema1, df
 
 def etapa_2(permutacion, hora_llegada: list[int], tiempo_sis_1: list[float]) -> list[int]:
-    hora_llegada_checked: list[tuple[float, list[bool], list[float]]] = []
+    ordenes_input = []
     for i in range(len(hora_llegada)):
-        cant_ordenes = get_cant_ordenes(5, 2/5)
+        cant_ordenes = np.random.binomial(5, 0.4)
         gustos = get_estaciones()
-
         for _ in range(cant_ordenes):
-            flag = False
-            for g in range(len(gustos)):
-                if gustos[g]:
-                    hora_llegada_checked.append((hora_llegada[i], g, tiempo_sis_1[i]))
-                    flag = True
-            
-            if not flag:
-                hora_llegada_checked.append((hora_llegada[i], -1, tiempo_sis_1[i]))
-        
-    hora_llegada_sorted = sorted(hora_llegada_checked, key=lambda x: x[0])
+            targets = [j for j, g in enumerate(gustos) if g]
+            if not targets:
+                ordenes_input.append((hora_llegada[i], -1, tiempo_sis_1[i]))
+            else:
+                for t in targets:
+                    ordenes_input.append((hora_llegada[i], t, tiempo_sis_1[i]))
+
+    hora_llegada_sorted = sorted(ordenes_input, key=lambda x: x[0])
 
     servidores_refrescos = [0]*permutacion[1]
     servidores_freidoras = [0]*permutacion[2]
@@ -219,7 +239,7 @@ def etapa_2(permutacion, hora_llegada: list[int], tiempo_sis_1: list[float]) -> 
 
                     servicio[i] = 'post'
                 case 3:
-                    tiempo_atencion[i] = get_random_tiempo_postres()
+                    tiempo_atencion[i] = get_random_tiempo_pollo()
                     servidores_usados[i] = get_servidor_disponible(servidores_pollos, hora)
 
                     hora_inicio_atencion[i] = max(
@@ -247,11 +267,11 @@ def etapa_2(permutacion, hora_llegada: list[int], tiempo_sis_1: list[float]) -> 
 
     return tiempo_total, df
 
-def simular(permutation: list[int]) -> tuple[float, float]:
+def simular(permutation: list[int]) -> tuple[float, float, DataFrame, int]:
     hora_fin_etapa_1, tiempo_sis_1, df1 = etapa_1(permutation[0])
     hora_sistema_total, df2 = etapa_2(permutation, hora_fin_etapa_1, tiempo_sis_1)
 
-    return np.mean(hora_sistema_total), np.var(hora_sistema_total), df1, df2
+    return float(np.mean(hora_sistema_total)), float(np.var(hora_sistema_total)), df1, df2
 
 def minimizar(permutaciones: list[list[int]]) -> tuple[float, float, Config, Config]:
     media_result = [-1]*5
@@ -268,11 +288,11 @@ def minimizar(permutaciones: list[list[int]]) -> tuple[float, float, Config, Con
     for p in permutaciones:
         media_local = []
         varianza_local = []
-        for _ in range(REPETICIONES_TOTALES):
+        for _ in range(2):
             media_simulada, varianza_simulada, df1, df2 = simular(p)
             media_local.append(media_simulada)
             varianza_local.append(varianza_simulada)
-        
+
         media_local_aux = np.mean(media_local)
         varianza_local_aux = np.var(varianza_local)
 
@@ -286,11 +306,11 @@ def minimizar(permutaciones: list[list[int]]) -> tuple[float, float, Config, Con
             varianza_result = p
             df1_varianza = df1
             df2_varianza = df2
-    
+
     print("Tabla Media")
     print(df1_media)
     print(df2_media)
-    
+
     print("\nTabla Varianza")
     print(df1_varianza)
     print(df2_varianza)
