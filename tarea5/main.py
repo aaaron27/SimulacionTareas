@@ -61,7 +61,7 @@ def generar_permutaciones(empleados: int) -> list[list[int]]:
     values = np.arange(1, empleados)
     return [
         c for c in product(values, repeat=5)
-        if sum(c) == empleados
+        if sum(c) <= empleados
     ]
 
 def calc_hora_llegada() -> list[int]:
@@ -139,9 +139,9 @@ def etapa_2(permutacion, hora_llegada: list[int], tiempo_sis_1: list[float]) -> 
 
         for _ in range(cant_ordenes):
             flag = False
-            for i in range(len(gustos)):
-                if gustos[i]:
-                    hora_llegada_checked.append((hora_llegada[i], i, tiempo_sis_1[i]))
+            for g in range(len(gustos)):
+                if gustos[g]:
+                    hora_llegada_checked.append((hora_llegada[i], g, tiempo_sis_1[i]))
                     flag = True
             
             if not flag:
