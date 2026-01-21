@@ -3,6 +3,7 @@ from typing import Tuple
 
 import numpy as np
 from itertools import product
+from math import inf, sqrt, pi, exp
 from dataclasses import dataclass
 from random import random
 import pandas as pd
