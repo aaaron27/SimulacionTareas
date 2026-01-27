@@ -221,6 +221,10 @@ def etapa_2(permutacion, hora_llegada: list[int], tiempo_sis_1: list[float]) -> 
     servidores_freidoras = [0]*permutacion.freidora
     servidores_pollos = [0]*permutacion.pollo
 
+    tiempo_servidores_refrescos = []
+    tiempo_servidores_freidoras = []
+    tiempo_servidores_pollos = []
+
     hora_inicio_atencion = [0]*len(hora_llegada_sorted)
     servidores_usados = [0]*len(hora_llegada_sorted)
     hora_salida = [0]*len(hora_llegada_sorted)
@@ -256,6 +260,8 @@ def etapa_2(permutacion, hora_llegada: list[int], tiempo_sis_1: list[float]) -> 
                     tiempo_sis_2[i] = hora_salida[i] - hora_inicio_atencion[i]
                     tiempo_total[i] = tiempo_sis_2[i] + tiempo_sis_1_i
                     servicio[i] = 'ref'
+
+                    tiempo_servidores_refrescos.append(tiempo_total[i])
                 case 1:
                     tiempo_atencion[i] = get_random_tiempo_freidora()
                     servidores_usados[i] = get_servidor_disponible(servidores_freidoras, hora)
@@ -270,6 +276,8 @@ def etapa_2(permutacion, hora_llegada: list[int], tiempo_sis_1: list[float]) -> 
                     tiempo_sis_2[i] = hora_salida[i] - hora_inicio_atencion[i]
                     tiempo_total[i] = tiempo_sis_2[i] + tiempo_sis_1_i
                     servicio[i] = 'frei'
+
+                    tiempo_servidores_freidoras.append(tiempo_total[i])
                 case 2:
                     tiempo_atencion[i] = get_random_tiempo_pollo()
                     servidores_usados[i] = get_servidor_disponible(servidores_pollos, hora)
@@ -286,6 +294,12 @@ def etapa_2(permutacion, hora_llegada: list[int], tiempo_sis_1: list[float]) -> 
 
                     servicio[i] = 'pol'
 
+                    tiempo_servidores_pollos.append(tiempo_total[i])
+
+    media_tiempo_refrescos = np.mean(tiempo_servidores_refrescos)
+    media_tiempo_freidora = np.mean(tiempo_servidores_freidoras)
+    media_tiempo_pollo = np.mean(tiempo_servidores_pollos)
+
     df = pd.DataFrame({
         "hora de llegada": hora_llegada_sorted,
         "inicio atencion": hora_inicio_atencion,
@@ -294,33 +308,86 @@ def etapa_2(permutacion, hora_llegada: list[int], tiempo_sis_1: list[float]) -> 
         "tiempo atencion": tiempo_atencion,
         "hora salida": hora_salida,
         "tiempoSIS2": tiempo_sis_2,
-        "Total": tiempo_total
+        "Total": tiempo_total,
     })
 
-    return tiempo_total, df
+    return tiempo_total, df, media_tiempo_refrescos, media_tiempo_freidora, media_tiempo_pollo
 
 def simular(permutation: Config) -> tuple[float, float, DataFrame, int]:
     hora_fin_etapa_1, tiempo_sis_1, df1 = etapa_1(permutation.cajas)
-    hora_sistema_total, df2 = etapa_2(permutation, hora_fin_etapa_1, tiempo_sis_1)
+    hora_sistema_total, df2, media_tiempo_refrescos, media_tiempo_freidora, media_tiempo_pollo = etapa_2(permutation, hora_fin_etapa_1, tiempo_sis_1)
 
-    return float(np.mean(hora_sistema_total)), float(np.var(hora_sistema_total)), df1, df2
+    return float(np.mean(hora_sistema_total)), float(np.var(hora_sistema_total)), df1, df2, media_tiempo_refrescos, media_tiempo_freidora, media_tiempo_pollo
 
 def minimizar(presupuesto: int) -> tuple[float | floating, list[int] | None]:
     configuraciones = generar_configuraciones(presupuesto)
     mejor_tiempo = float('inf')
     mejor_config = None
 
+    # covarianza
+    cov_ref_frei = None
+    cov_frei_pol = None
+    cov_ref_pol = None
+
+    freq = dict()
+    rango_minimo = -1
+    rango_maximo = inf
+    medias = []
+
     for p in configuraciones:
         tiempos_medios = []
+        tiempos_ref = []
+        tiempos_frei = []
+        tiempos_pol = []
+
         for _ in range(REPETICIONES_TOTALES):
-            media_sim, _, _, _ = simular(p)
+            media_sim, _, _, _, media_refre, media_frei, media_pol = simular(p)
             tiempos_medios.append(media_sim)
+            tiempos_ref.append(media_refre)
+            tiempos_frei.append(media_frei)
+            tiempos_pol.append(media_pol)
 
         media_total = np.mean(tiempos_medios)
+        medias.append(media_total)
+
+        # rango
+        rango_minimo = min(rango_minimo, media_total)
+        rango_maximo = max(rango_maximo, media_total)
+
+        # moda
+        freq[int(media_total)] = freq.get(int(media_total), 0) + 1
 
         if media_total < mejor_tiempo:
             mejor_tiempo = media_total
             mejor_config = p
+            cov_ref_frei = np.cov(tiempos_ref, tiempos_frei)[0, 1]
+            cov_frei_pol = np.cov(tiempos_frei, tiempos_pol)[0, 1]
+            cov_ref_pol = np.cov(tiempos_ref, tiempos_pol)
+
+    # mediana
+    mediana = np.median(medias)
+
+    # varianza
+    varianza = np.var(medias)
+
+    # moda
+    moda = None
+    max_freq = -1
+    for k, i in freq.items():
+        if i > max_freq:
+            max_freq =  i
+            moda = k
+
+    # cuartiles
+    c1 = np.percentile(medias, 25)
+    c2 = np.percentile(medias, 50)
+    c3 = np.percentile(medias, 75)
+
+    # percentiles
+    p25 = np.percentile(medias, 25)
+    p50 = np.percentile(medias, 50)
+    p75 = np.percentile(medias, 75)
+    p95 = np.percentile(medias, 95)
 
     return mejor_tiempo, mejor_config
 
@@ -333,6 +400,7 @@ def main():
     print(f"\tRefrescos: {config_media.refrescos}")
     print(f"\tFreidora: {config_media.freidora}")
     print(f"\tPollo: {config_media.pollo}")
+
 
 if __name__ == '__main__':
     main()
