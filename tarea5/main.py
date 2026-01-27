@@ -12,13 +12,17 @@ from pandas import DataFrame
 
 from simpson import simpson
 
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', None)         # Evita que la tabla se "rompa" en varias líneas
+pd.set_option('display.max_colwidth', None)
 pd.set_option('display.max_columns', None)
 pd.set_option('display.float_format', '{:.4f}'.format)
 
 PATH_MUESTRA_POISSON = 'data/muestra_poisson.txt'
 
 EMPLEADOS_TOTALES = 12
-REPETICIONES_TOTALES = 100
+REPETICIONES_TOTALES = 10
 
 MEDIA_CAJAS = 2.5
 MEDIA_REFRESCOS = 0.75
@@ -306,11 +310,11 @@ def minimizar(permutaciones: list[list[int]]) -> tuple[float, float, Config, Con
             df2_varianza = df2
 
     print("Tabla Media")
-    print(df1_media)
-    print(df2_media)
+    print(df1_media.to_csv())
+    print(df2_media.to_csv())
 
     print("\nTabla Varianza")
-    print(df1_varianza)
+    print(df1_varianza.to_csv())
     print(df2_varianza)
 
     return media_media, varianza_media, Config(*media_result), Config(*varianza_result)
