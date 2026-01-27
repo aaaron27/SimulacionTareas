@@ -1,9 +1,5 @@
-import math
-from typing import Tuple, List
-
 import numpy as np
-from itertools import product
-from math import inf, sqrt, pi, exp
+from math import inf, sqrt, exp, pi
 from dataclasses import dataclass
 from random import random
 import pandas as pd
@@ -30,10 +26,18 @@ MEDIA_REFRESCOS = 0.75
 MEDIA_FREIDORA = 3
 MEDIA_POLLO = 10
 
+@dataclass
+class Config:
+    cajas: int
+    refrescos: int
+    freidora: int
+    pollo: int
+    costo: int = 0
+
 def realizar_pruebas(nombre, muestras, dist_teorica, params):
     print(f"\n--- {nombre.upper()} ---")
 
-    ks_stat, ks_p = stats.ks_1samp(muestras, dist_teorica(*params).cdf)
+    _, ks_p = stats.ks_1samp(muestras, dist_teorica(*params).cdf)
     print(f"KS Test: p-valor = {ks_p:.4f} -> {'ACEPTADO' if ks_p > 0.05 else 'RECHAZADO'}")
 
     obs, edges = np.histogram(muestras, bins=10)
@@ -44,7 +48,7 @@ def realizar_pruebas(nombre, muestras, dist_teorica, params):
     prob_esperada = prob_esperada / np.sum(prob_esperada)
     esperados = prob_esperada * len(muestras)
 
-    chi_stat, chi_p = stats.chisquare(obs, f_exp=esperados)
+    _, chi_p = stats.chisquare(obs, f_exp=esperados)
     print(f"Chi2 Test: p-valor = {chi_p:.4f} -> {'ACEPTADO' if chi_p > 0.05 else 'RECHAZADO'}")
 
 def validar_distribuciones():
@@ -73,22 +77,12 @@ pd.set_option('display.max_columns', None)
 pd.set_option('display.float_format', '{:.4f}'.format)
 
 def normal_pdf(x, mu, sigma):
-    part1 = 1 / (sigma * math.sqrt(2 * math.pi))
-    part2 = math.exp(-0.5 * ((x - mu) / sigma)**2)
+    part1 = 1 / (sigma * sqrt(2 * pi))
+    part2 = exp(-0.5 * ((x - mu) / sigma)**2)
     return part1 * part2
 
 def normal_cdf(x, mu=3, sigma=1):
     return simpson(lambda t: normal_pdf(t, mu, sigma), mu - 5 * sigma, x, n=50)
-
-
-@dataclass
-class Config:
-    cajas: int
-    refrescos: int
-    freidora: int
-    pollo: int
-    costo: int = 0
-
 
 def get_cant_ordenes(n: int, p: float):
     return np.random.binomial(n, p)
@@ -117,13 +111,7 @@ def get_random_tiempo_pollo():
     return np.random.geometric(p=0.1)
 
 def get_estaciones():
-    estaciones_deseadas = [False]*len(PROBABILIDADES)
-
-    for i in range(len(PROBABILIDADES)):
-        if random() <= PROBABILIDADES[i]:
-            estaciones_deseadas[i] = True
-
-    return estaciones_deseadas
+    return [random() <= p for p in PROBABILIDADES]
 
 def generar_configuraciones(presupuesto: int) -> list[Config]:
     configuraciones = []
@@ -217,7 +205,7 @@ def etapa_1(n_cajas: int):
 def etapa_2(permutacion, hora_llegada: list[int], tiempo_sis_1: list[float]) -> list[int]:
     ordenes_input = []
     for i in range(len(hora_llegada)):
-        cant_ordenes = np.random.binomial(5, 0.4)
+        cant_ordenes = get_cant_ordenes(5, 0.4)
         gustos = get_estaciones()
         for _ in range(cant_ordenes):
             targets = [j for j, g in enumerate(gustos) if g]
