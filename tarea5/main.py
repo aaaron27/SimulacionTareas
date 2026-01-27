@@ -41,7 +41,6 @@ def normal_pdf(x, mu, sigma):
 def normal_cdf(x, mu=3, sigma=1):
     return simpson(lambda t: normal_pdf(t, mu, sigma), mu - 5 * sigma, x, n=50)
 
-
 @dataclass
 class Config:
     cajas: int
@@ -87,7 +86,10 @@ def get_estaciones():
 
 def generar_permutaciones(empleados: int) -> list[list[int]]:
     values = np.arange(1, empleados)
-    return [list(c) for c in product(values, repeat=5) if sum(c) == empleados]
+    return [
+        c for c in product(values, repeat=5)
+        if sum(c) <= empleados
+    ]
 
 def calc_hora_llegada() -> list[int]:
     minutos_limite = 480 # 8h = 480min
@@ -290,7 +292,7 @@ def minimizar(permutaciones: list[list[int]]) -> tuple[float, float, Config, Con
     for p in permutaciones:
         media_local = []
         varianza_local = []
-        for _ in range(REPETICIONES_TOTALES):
+        for _ in range(2):
             media_simulada, varianza_simulada, df1, df2 = simular(p)
             media_local.append(media_simulada)
             varianza_local.append(varianza_simulada)
