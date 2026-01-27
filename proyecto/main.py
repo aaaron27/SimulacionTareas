@@ -7,6 +7,7 @@ from numpy import floating
 from pandas import DataFrame
 from scipy import stats
 from simpson import simpson
+import matplotlib.pyplot as plt
 
 COSTOS = {
     'cajas': 500,
@@ -319,6 +320,135 @@ def simular(permutation: Config) -> tuple[float, float, DataFrame, int]:
 
     return float(np.mean(hora_sistema_total)), float(np.var(hora_sistema_total)), df1, df2, media_tiempo_refrescos, media_tiempo_freidora, media_tiempo_pollo
 
+def graficar_all(medias, freq, mejor_tiempo, mejor_config, mediana, moda, varianza, c1, c2, c3, p95, cov_ref_frei, cov_frei_pol, cov_ref_pol):
+    fig = plt.figure(figsize=(16, 10))
+    gs = fig.add_gridspec(3, 3, hspace=0.3, wspace=0.3)
+
+    # histograma
+    ax1 = fig.add_subplot(gs[0, :2])
+    ax1.hist(medias, bins=30, edgecolor='black', alpha=0.7, color='skyblue')
+    ax1.axvline(mejor_tiempo, color='red', linestyle='--', linewidth=2, label=f'Mejor: {mejor_tiempo:.2f}')
+    ax1.axvline(mediana, color='green', linestyle='--', linewidth=2, label=f'Mediana: {mediana:.2f}')
+    ax1.axvline(moda, color='orange', linestyle='--', linewidth=2, label=f'Moda: {moda}')
+    ax1.set_xlabel('Tiempo Medio (min)', fontsize=12)
+    ax1.set_ylabel('Frecuencia', fontsize=12)
+    ax1.set_title('Distribución de Tiempos Medios', fontsize=14, fontweight='bold')
+    ax1.legend()
+    ax1.grid(True, alpha=0.3)
+
+    ax2 = fig.add_subplot(gs[0, 2])
+    bp = ax2.boxplot(medias, vert=True, patch_artist=True)
+    bp['boxes'][0].set_facecolor('lightblue')
+    ax2.set_ylabel('Tiempo (min)', fontsize=12)
+    ax2.set_title('Box Plot', fontsize=14, fontweight='bold')
+    ax2.grid(True, alpha=0.3, axis='y')
+    
+    # cuartiles
+    ax2.text(1.15, c1, f'Q1: {c1:.2f}', fontsize=9, va='center')
+    ax2.text(1.15, c2, f'Q2: {c2:.2f}', fontsize=9, va='center')
+    ax2.text(1.15, c3, f'Q3: {c3:.2f}', fontsize=9, va='center')
+
+    # frecuencias
+    ax3 = fig.add_subplot(gs[1, :2])
+    tiempos_ordenados = sorted(freq.keys())
+    frecuencias = [freq[k] for k in tiempos_ordenados]
+    
+    bars = ax3.bar(tiempos_ordenados, frecuencias, edgecolor='black', alpha=0.7, color='coral')
+    
+    if moda in freq:
+        idx_moda = tiempos_ordenados.index(moda)
+        bars[idx_moda].set_color('red')
+    
+    ax3.set_xlabel('Tiempo Medio (min)', fontsize=12)
+    ax3.set_ylabel('Frecuencia', fontsize=12)
+    ax3.set_title('Frecuencias de Tiempos (Moda en Rojo)', fontsize=14, fontweight='bold')
+    ax3.grid(True, alpha=0.3, axis='y')
+
+    # tabla estadistica
+    ax4 = fig.add_subplot(gs[1, 2])
+    ax4.axis('off')
+    
+    stats_text = f"""
+    ESTADÍSTICAS DESCRIPTIVAS
+    {'='*30}
+    
+    Media:        {np.mean(medias):.3f} min
+    Mediana:      {mediana:.3f} min
+    Moda:         {moda} min
+    
+    Desv. Est:    {np.sqrt(varianza):.3f} min
+    Varianza:     {varianza:.3f}
+    
+    Mínimo:       {np.min(medias):.3f} min
+    Máximo:       {np.max(medias):.3f} min
+    Rango:        {np.max(medias) - np.min(medias):.3f} min
+    
+    Q1 (P25):     {c1:.3f} min
+    Q2 (P50):     {c2:.3f} min
+    Q3 (P75):     {c3:.3f} min
+    P95:          {p95:.3f} min
+    """
+    
+    ax4.text(0.1, 0.9, stats_text, transform=ax4.transAxes,
+             fontsize=10, verticalalignment='top',
+             fontfamily='monospace',
+             bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+
+    # covarianza
+    ax5 = fig.add_subplot(gs[2, :2])
+    
+    covs = {
+        'Refrescos\nvs\nFreidora': cov_ref_frei,
+        'Freidora\nvs\nPollo': cov_frei_pol,
+        'Refrescos\nvs\nPollo': cov_ref_pol
+    }
+    
+    colors = ['green' if v > 0 else 'red' for v in covs.values()]
+    bars = ax5.bar(covs.keys(), covs.values(), color=colors, edgecolor='black', alpha=0.7)
+    
+    ax5.axhline(0, color='black', linewidth=0.8)
+    ax5.set_ylabel('Covarianza', fontsize=12)
+    ax5.set_title('Covarianzas entre Estaciones (Mejor Config)', fontsize=14, fontweight='bold')
+    ax5.grid(True, alpha=0.3, axis='y')
+    
+    for bar, val in zip(bars, covs.values()):
+        height = bar.get_height()
+        ax5.text(bar.get_x() + bar.get_width()/2., height,
+                f'{val:.3f}',
+                ha='center', va='bottom' if height > 0 else 'top',
+                fontsize=10, fontweight='bold')
+        
+    # mejor config
+    ax6 = fig.add_subplot(gs[2, 2])
+    ax6.axis('off')
+    
+    config_text = f"""
+    MEJOR CONFIGURACIÓN
+    {'='*30}
+    
+    Tiempo: {mejor_tiempo:.3f} min
+    
+    Distribución:
+    • Cajas:      {mejor_config.cajas} servidores
+    • Refrescos:  {mejor_config.refrescos} servidores
+    • Freidora:   {mejor_config.freidora} servidores
+    • Postres:    {mejor_config.freidora} servidores
+    • Pollo:      {mejor_config.pollo} servidores
+    
+    """
+    
+    ax6.text(0.1, 0.9, config_text, transform=ax6.transAxes,
+             fontsize=11, verticalalignment='top',
+             fontfamily='monospace',
+             bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.5))
+    
+    # Título general
+    fig.suptitle('Dashboard de Optimización - Sistema de Colas', 
+                 fontsize=16, fontweight='bold', y=0.98)
+    
+    plt.savefig('resultados_optimizacion.png', dpi=300, bbox_inches='tight')
+    plt.show()
+
 def minimizar(presupuesto: int) -> tuple[float | floating, list[int] | None]:
     configuraciones = generar_configuraciones(presupuesto)
     mejor_tiempo = float('inf')
@@ -330,8 +460,8 @@ def minimizar(presupuesto: int) -> tuple[float | floating, list[int] | None]:
     cov_ref_pol = None
 
     freq = dict()
-    rango_minimo = -1
-    rango_maximo = inf
+    rango_minimo = float('inf')
+    rango_maximo = -float('inf')
     medias = []
 
     for p in configuraciones:
@@ -340,7 +470,7 @@ def minimizar(presupuesto: int) -> tuple[float | floating, list[int] | None]:
         tiempos_frei = []
         tiempos_pol = []
 
-        for _ in range(REPETICIONES_TOTALES):
+        for _ in range(REPETICIONES_TOTALES + 20):
             media_sim, _, _, _, media_refre, media_frei, media_pol = simular(p)
             tiempos_medios.append(media_sim)
             tiempos_ref.append(media_refre)
@@ -355,14 +485,14 @@ def minimizar(presupuesto: int) -> tuple[float | floating, list[int] | None]:
         rango_maximo = max(rango_maximo, media_total)
 
         # moda
-        freq[int(media_total)] = freq.get(int(media_total), 0) + 1
+        freq[round(media_total)] = freq.get(round(media_total), 0) + 1
 
         if media_total < mejor_tiempo:
             mejor_tiempo = media_total
             mejor_config = p
             cov_ref_frei = np.cov(tiempos_ref, tiempos_frei)[0, 1]
             cov_frei_pol = np.cov(tiempos_frei, tiempos_pol)[0, 1]
-            cov_ref_pol = np.cov(tiempos_ref, tiempos_pol)
+            cov_ref_pol = np.cov(tiempos_ref, tiempos_pol)[0, 1]
 
     # mediana
     mediana = np.median(medias)
@@ -388,6 +518,8 @@ def minimizar(presupuesto: int) -> tuple[float | floating, list[int] | None]:
     p50 = np.percentile(medias, 50)
     p75 = np.percentile(medias, 75)
     p95 = np.percentile(medias, 95)
+
+    graficar_all(medias, freq, mejor_tiempo, mejor_config, mediana, moda, varianza, c1, c2, c3, p95, cov_ref_frei, cov_frei_pol, cov_ref_pol)
 
     return mejor_tiempo, mejor_config
 
