@@ -425,34 +425,45 @@ def graficar_all(medias, freq, mejor_tiempo, mejor_config, mediana, moda, varian
     ax3.grid(True, alpha=0.3, axis='y')
 
     # tabla estadistica
-    ax4 = fig.add_subplot(gs[1, 2])
+    ax4 = fig.add_subplot(gs[1:, 2])
     ax4.axis('off')
 
-    stats_text = f"""
+    combined_text = f"""
     ESTADÍSTICAS DESCRIPTIVAS
     {'='*30}
-    
+
     Media:        {np.mean(medias):.3f} min
     Mediana:      {mediana:.3f} min
     Moda:         {moda} min
-    
+
     Desv. Est:    {np.sqrt(varianza):.3f} min
     Varianza:     {varianza:.3f}
-    
+
     Mínimo:       {np.min(medias):.3f} min
     Máximo:       {np.max(medias):.3f} min
     Rango:        {np.max(medias) - np.min(medias):.3f} min
-    
+
     Q1 (P25):     {c1:.3f} min
     Q2 (P50):     {c2:.3f} min
     Q3 (P75):     {c3:.3f} min
     P95:          {p95:.3f} min
+
+    MEJOR CONFIGURACIÓN
+    {'='*30}
+
+    Tiempo: {mejor_tiempo:.3f} min
+
+    Distribución:
+    - Cajas:      {mejor_config.cajas} servidores
+    - Refrescos:  {mejor_config.refrescos} servidores
+    - Freidora:   {mejor_config.freidora} servidores
+    - Pollo:      {mejor_config.pollo} servidores
     """
 
-    ax4.text(0.1, 0.9, stats_text, transform=ax4.transAxes,
-             fontsize=10, verticalalignment='top',
-             fontfamily='monospace',
-             bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+    ax4.text(0.1, 0.95, combined_text, transform=ax4.transAxes,
+    fontsize=10, verticalalignment='top',
+    fontfamily='monospace',
+    bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
 
     # covarianza
     ax5 = fig.add_subplot(gs[2, :2])
@@ -477,30 +488,6 @@ def graficar_all(medias, freq, mejor_tiempo, mejor_config, mediana, moda, varian
                 f'{val:.3f}',
                 ha='center', va='bottom' if height > 0 else 'top',
                 fontsize=10, fontweight='bold')
-
-    # mejor config
-    ax6 = fig.add_subplot(gs[2, 2])
-    ax6.axis('off')
-
-    config_text = f"""
-    MEJOR CONFIGURACIÓN
-    {'='*30}
-    
-    Tiempo: {mejor_tiempo:.3f} min
-    
-    Distribución:
-    • Cajas:      {mejor_config.cajas} servidores
-    • Refrescos:  {mejor_config.refrescos} servidores
-    • Freidora:   {mejor_config.freidora} servidores
-    • Postres:    {mejor_config.freidora} servidores
-    • Pollo:      {mejor_config.pollo} servidores
-    
-    """
-
-    ax6.text(0.1, 0.9, config_text, transform=ax6.transAxes,
-             fontsize=11, verticalalignment='top',
-             fontfamily='monospace',
-             bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.5))
 
     # Título general
     fig.suptitle('Dashboard de Optimización - Sistema de Colas',
@@ -574,9 +561,9 @@ def minimizar(presupuesto: int) -> tuple[float | floating, list[int] | None]:
     c3 = np.percentile(medias, 75)
 
     # percentiles
-    p25 = np.percentile(medias, 25)
-    p50 = np.percentile(medias, 50)
-    p75 = np.percentile(medias, 75)
+    p25 = c1
+    p50 = c2
+    p75 = c3
     p95 = np.percentile(medias, 95)
 
     graficar_all(medias, freq, mejor_tiempo, mejor_config, mediana, moda, varianza, c1, c2, c3, p95, cov_ref_frei, cov_frei_pol, cov_ref_pol)
