@@ -1,3 +1,5 @@
+from typing import Tuple, Any, List
+
 import numpy as np
 from math import inf, sqrt, exp, pi
 from dataclasses import dataclass
@@ -161,164 +163,222 @@ def get_servidor_disponible(servidores: list[float], tiempo: float) -> int:
             return i
     return min_index
 
+
 def etapa_1(n_cajas: int):
     hora_llegada = calc_hora_llegada()
-    servidores_cajas_disponibles = [0]*n_cajas
-    servidor_usado = [0]*len(hora_llegada)
-    hora_inicio_atencion = [0]*len(hora_llegada)
-    tiempo_atencion = [0]*len(hora_llegada)
-    tiempo_sistema1 = [0]*len(hora_llegada)
-    hora_fin = [0]*len(hora_llegada)
+    if not hora_llegada: return [], [], [], pd.DataFrame()
 
-    # primer fila
-    aux_cajas = get_random_tiempo_cajas()
-    tiempo_atencion[0] = aux_cajas
-    hora_inicio_atencion[0] = hora_llegada[0]
-    tiempo_sistema1[0] = aux_cajas
-    servidor_usado[0] = 0
-    hora_fin[0] = tiempo_sistema1[0] + hora_inicio_atencion[0]
-    servidores_cajas_disponibles[0] = hora_fin[0]
+    servidores = [0.0] * n_cajas
+    espera_etapa1 = []
+    hora_fin_etapa1 = []
 
-    for i in range(1, len(hora_llegada)):
-        tiempo_atencion[i] = get_random_tiempo_cajas()
-        servidor_usado[i] = get_servidor_disponible(servidores_cajas_disponibles, hora_llegada[i])
+    # Listas para el DataFrame
+    h_inicio_atencion = []
+    t_atencion = []
+    serv_usado = []
 
-        hora_inicio_atencion[i] = max(
-            servidores_cajas_disponibles[servidor_usado[i]],
-            hora_llegada[i]
-        )
+    for llegada in hora_llegada:
+        idx = get_servidor_disponible(servidores, llegada)
+        inicio = max(llegada, servidores[idx])
 
-        servidores_cajas_disponibles[servidor_usado[i]] = hora_inicio_atencion[i] + tiempo_atencion[i]
-        hora_fin[i] = hora_llegada[i] + tiempo_atencion[i]
-        tiempo_sistema1[i] = hora_fin[i] - hora_llegada[i]
+        # CÁLCULO DE ESPERA 1
+        espera = inicio - llegada
+        espera_etapa1.append(espera)
+
+        tiempo_atencion = get_random_tiempo_cajas()
+        fin = inicio + tiempo_atencion
+        servidores[idx] = fin
+
+        hora_fin_etapa1.append(fin)
+        h_inicio_atencion.append(inicio)
+        t_atencion.append(tiempo_atencion)
+        serv_usado.append(idx)
 
     df = pd.DataFrame({
         "Hora llegada": hora_llegada,
-        "Hora inicio atención": hora_inicio_atencion,
-        "Servidor usado": servidor_usado,
-        "Tiempo atención": tiempo_atencion,
-        "Tiempo sistema": tiempo_sistema1,
-        "Hora fin": hora_fin
+        "Espera": espera_etapa1,
+        "Hora fin": hora_fin_etapa1
     })
 
-    return hora_fin, tiempo_sistema1, df
+    return hora_fin_etapa1, espera_etapa1, df
 
-def etapa_2(permutacion, hora_llegada: list[int], tiempo_sis_1: list[float]) -> list[int]:
-    ordenes_input = []
+
+def etapa_2(permutacion, hora_llegada: list[float], tiempo_sis_1: list[float]):
+    grupos = []
+
     for i in range(len(hora_llegada)):
+        cant_personas = get_cant_ordenes(5, 0.4)
+
+        if cant_personas == 0:
+            continue
+
+        gustos = get_estaciones()
+        ordenes_grupo = []
+
+        for gusto_idx, tiene_gusto in enumerate(gustos):
+            if tiene_gusto:
+                for _ in range(cant_personas):
+                    ordenes_grupo.append(gusto_idx)
+
+        if ordenes_grupo:
+            grupos.append({
+                'grupo_id': i,
+                'hora_llegada': hora_llegada[i],
+                'tiempo_sis_1': tiempo_sis_1[i],
+                'ordenes': ordenes_grupo,
+                'cant_personas': cant_personas
+            })
+
+    servidores_refrescos = [0] * permutacion.refrescos
+    servidores_freidoras = [0] * permutacion.freidora
+    servidores_pollos = [0] * permutacion.pollo
+
+    tiempos_refrescos = []
+    tiempos_freidoras = []
+    tiempos_pollos = []
+
+    resultados_grupos = []
+
+    for grupo in grupos:
+        hora_llegada_grupo = grupo['hora_llegada']
+        ordenes = grupo['ordenes']
+
+        tiempos_finalizacion = []
+
+        for orden in ordenes:
+            match orden:
+                case 0:  # Refrescos
+                    tiempo_servicio = get_random_tiempo_refrescos()
+                    servidor_idx = get_servidor_disponible(servidores_refrescos, hora_llegada_grupo)
+
+                    hora_inicio = max(servidores_refrescos[servidor_idx], hora_llegada_grupo)
+                    hora_fin = hora_inicio + tiempo_servicio
+                    servidores_refrescos[servidor_idx] = hora_fin
+                    tiempos_finalizacion.append(hora_fin)
+                    tiempos_refrescos.append(tiempo_servicio)
+
+                case 1:  # Freidora
+                    tiempo_servicio = get_random_tiempo_freidora()
+                    servidor_idx = get_servidor_disponible(servidores_freidoras, hora_llegada_grupo)
+
+                    hora_inicio = max(servidores_freidoras[servidor_idx], hora_llegada_grupo)
+                    hora_fin = hora_inicio + tiempo_servicio
+                    servidores_freidoras[servidor_idx] = hora_fin
+                    tiempos_finalizacion.append(hora_fin)
+                    tiempos_freidoras.append(tiempo_servicio)
+
+                case 2:  # Pollo
+                    tiempo_servicio = get_random_tiempo_pollo()
+                    servidor_idx = get_servidor_disponible(servidores_pollos, hora_llegada_grupo)
+
+                    hora_inicio = max(servidores_pollos[servidor_idx], hora_llegada_grupo)
+                    hora_fin = hora_inicio + tiempo_servicio
+                    servidores_pollos[servidor_idx] = hora_fin
+                    tiempos_finalizacion.append(hora_fin)
+                    tiempos_pollos.append(tiempo_servicio)
+
+        hora_salida_grupo = max(tiempos_finalizacion) if tiempos_finalizacion else hora_llegada_grupo
+        tiempo_total_grupo = (hora_salida_grupo - hora_llegada_grupo) + grupo['tiempo_sis_1']
+
+        resultados_grupos.append({
+            'grupo_id': grupo['grupo_id'],
+            'cant_personas': grupo['cant_personas'],
+            'hora_llegada': hora_llegada_grupo,
+            'hora_salida': hora_salida_grupo,
+            'cant_ordenes': len(ordenes),
+            'tiempo_total': tiempo_total_grupo
+        })
+
+    df = pd.DataFrame(resultados_grupos)
+
+    if len(resultados_grupos) > 0:
+        tiempos_totales = [g['tiempo_total'] for g in resultados_grupos]
+        media_tiempo_total = np.mean(tiempos_totales)
+    else:
+        tiempos_totales = []
+        media_tiempo_total = 0
+
+    # Calcular medias por estación
+    media_refrescos = np.mean(tiempos_refrescos) if tiempos_refrescos else 0
+    media_freidoras = np.mean(tiempos_freidoras) if tiempos_freidoras else 0
+    media_pollos = np.mean(tiempos_pollos) if tiempos_pollos else 0
+
+    return (tiempos_totales, df, media_tiempo_total,
+            media_refrescos, media_freidoras, media_pollos)
+
+
+def etapa_2_2(permutacion, hora_fin_e1: list[int], esperas_e1: list[float]):
+    ordenes_input = []
+    # Emparejamos cada salida de caja con su espera previa
+    for i in range(len(hora_fin_e1)):
         cant_ordenes = get_cant_ordenes(5, 0.4)
         gustos = get_estaciones()
         for _ in range(cant_ordenes):
             targets = [j for j, g in enumerate(gustos) if g]
+            # Pasamos la hora de llegada a etapa 2 y la espera que ya trae de la caja
             if not targets:
-                ordenes_input.append((hora_llegada[i], -1, tiempo_sis_1[i]))
+                ordenes_input.append((hora_fin_e1[i], -1, esperas_e1[i]))
             else:
                 for t in targets:
-                    ordenes_input.append((hora_llegada[i], t, tiempo_sis_1[i]))
+                    ordenes_input.append((hora_fin_e1[i], t, esperas_e1[i]))
 
-    hora_llegada_sorted = sorted(ordenes_input, key=lambda x: x[0])
+    ordenes_sorted = sorted(ordenes_input, key=lambda x: x[0])
 
-    servidores_refrescos = [0]*permutacion.refrescos
-    servidores_freidoras = [0]*permutacion.freidora
-    servidores_pollos = [0]*permutacion.pollo
+    serv_ref = [0] * permutacion.refrescos
+    serv_frei = [0] * permutacion.freidora
+    serv_pol = [0] * permutacion.pollo
 
-    tiempo_servidores_refrescos = []
-    tiempo_servidores_freidoras = []
-    tiempo_servidores_pollos = []
+    esperas_totales = []  # Wait1 + Wait2
+    tiempos_ref, tiempos_frei, tiempos_pol = [], [], []
 
-    hora_inicio_atencion = [0]*len(hora_llegada_sorted)
-    servidores_usados = [0]*len(hora_llegada_sorted)
-    hora_salida = [0]*len(hora_llegada_sorted)
-    tiempo_atencion = [0]*len(hora_llegada_sorted)
-    tiempo_sis_2 = [0]*len(hora_llegada_sorted)
-    tiempo_total = [0]*len(hora_llegada_sorted)
-    servicio = [0]*len(hora_llegada_sorted)
-
-    for i in range(len(hora_llegada_sorted)):
-        hora, gusto, tiempo_sis_1_i = hora_llegada_sorted[i]
-
+    for hora_llegada_e2, gusto, espera_e1 in ordenes_sorted:
         if gusto == -1:
-            hora_inicio_atencion[i] = hora
-            servidores_usados[i] = -1
-            tiempo_atencion[i] = 0
-            hora_salida[i] = hora
-            tiempo_sis_2[i] = 0
-            tiempo_total[i] = tiempo_sis_2[i] + tiempo_sis_1_i
-            servicio[i] = None
+            esperas_totales.append(espera_e1)
         else:
-            match gusto:
-                case 0:
-                    tiempo_atencion[i] = get_random_tiempo_refrescos()
-                    servidores_usados[i] = get_servidor_disponible(servidores_refrescos, hora)
+            # Seleccionar servidor y calcular espera en etapa 2
+            if gusto == 0:  # Refrescos
+                idx = get_servidor_disponible(serv_ref, hora_llegada_e2)
+                inicio = max(hora_llegada_e2, serv_ref[idx])
+                espera_e2 = inicio - hora_llegada_e2
+                serv_ref[idx] = inicio + get_random_tiempo_refrescos()
+                tiempos_ref.append(espera_e2)
+            elif gusto == 1:  # Freidora
+                idx = get_servidor_disponible(serv_frei, hora_llegada_e2)
+                inicio = max(hora_llegada_e2, serv_frei[idx])
+                espera_e2 = inicio - hora_llegada_e2
+                serv_frei[idx] = inicio + get_random_tiempo_freidora()
+                tiempos_frei.append(espera_e2)
+            else:  # Pollo
+                idx = get_servidor_disponible(serv_pol, hora_llegada_e2)
+                inicio = max(hora_llegada_e2, serv_pol[idx])
+                espera_e2 = inicio - hora_llegada_e2
+                serv_pol[idx] = inicio + get_random_tiempo_pollo()
+                tiempos_pol.append(espera_e2)
 
-                    hora_inicio_atencion[i] = max(
-                        servidores_refrescos[servidores_usados[i]],
-                        hora
-                    )
+            # EL RESULTADO ES LA SUMA DE TODAS LAS ESPERAS (FILAS)
+            esperas_totales.append(espera_e1 + espera_e2)
 
-                    servidores_refrescos[servidores_usados[i]] = hora_inicio_atencion[i] + tiempo_atencion[i]
-                    hora_salida[i] = hora_inicio_atencion[i] + tiempo_atencion[i]
-                    tiempo_sis_2[i] = hora_salida[i] - hora_inicio_atencion[i]
-                    tiempo_total[i] = tiempo_sis_2[i] + tiempo_sis_1_i
-                    servicio[i] = 'ref'
+    # Medias de espera por estación para la covarianza (pueden ser 0 si no hubo pedidos)
+    m_ref = np.mean(tiempos_ref) if tiempos_ref else 0
+    m_frei = np.mean(tiempos_frei) if tiempos_frei else 0
+    m_pol = np.mean(tiempos_pol) if tiempos_pol else 0
 
-                    tiempo_servidores_refrescos.append(tiempo_total[i])
-                case 1:
-                    tiempo_atencion[i] = get_random_tiempo_freidora()
-                    servidores_usados[i] = get_servidor_disponible(servidores_freidoras, hora)
+    return esperas_totales, None, m_ref, m_frei, m_pol
 
-                    hora_inicio_atencion[i] = max(
-                        servidores_freidoras[servidores_usados[i]],
-                        hora
-                    )
-
-                    servidores_freidoras[servidores_usados[i]] = hora_inicio_atencion[i] + tiempo_atencion[i]
-                    hora_salida[i] = hora_inicio_atencion[i] + tiempo_atencion[i]
-                    tiempo_sis_2[i] = hora_salida[i] - hora_inicio_atencion[i]
-                    tiempo_total[i] = tiempo_sis_2[i] + tiempo_sis_1_i
-                    servicio[i] = 'frei'
-
-                    tiempo_servidores_freidoras.append(tiempo_total[i])
-                case 2:
-                    tiempo_atencion[i] = get_random_tiempo_pollo()
-                    servidores_usados[i] = get_servidor_disponible(servidores_pollos, hora)
-
-                    hora_inicio_atencion[i] = max(
-                        servidores_pollos[servidores_usados[i]],
-                        hora
-                    )
-
-                    servidores_pollos[servidores_usados[i]] = hora_inicio_atencion[i] + tiempo_atencion[i]
-                    hora_salida[i] = hora_inicio_atencion[i] + tiempo_atencion[i]
-                    tiempo_sis_2[i] = hora_salida[i] - hora_inicio_atencion[i]
-                    tiempo_total[i] = tiempo_sis_2[i] + tiempo_sis_1_i
-
-                    servicio[i] = 'pol'
-
-                    tiempo_servidores_pollos.append(tiempo_total[i])
-
-    media_tiempo_refrescos = np.mean(tiempo_servidores_refrescos)
-    media_tiempo_freidora = np.mean(tiempo_servidores_freidoras)
-    media_tiempo_pollo = np.mean(tiempo_servidores_pollos)
-
-    df = pd.DataFrame({
-        "hora de llegada": hora_llegada_sorted,
-        "inicio atencion": hora_inicio_atencion,
-        "servidor": servidores_usados,
-        "servicio": servicio,
-        "tiempo atencion": tiempo_atencion,
-        "hora salida": hora_salida,
-        "tiempoSIS2": tiempo_sis_2,
-        "Total": tiempo_total,
-    })
-
-    return tiempo_total, df, media_tiempo_refrescos, media_tiempo_freidora, media_tiempo_pollo
-
-def simular(permutation: Config) -> tuple[float, float, DataFrame, int]:
+def simular(permutation: Config) -> tuple[float, float, Any, Any, floating, floating, floating]:
     hora_fin_etapa_1, tiempo_sis_1, df1 = etapa_1(permutation.cajas)
-    hora_sistema_total, df2, media_tiempo_refrescos, media_tiempo_freidora, media_tiempo_pollo = etapa_2(permutation, hora_fin_etapa_1, tiempo_sis_1)
+    hora_sistema_total, df2, media_total,  media_tiempo_refrescos, media_tiempo_freidora, media_tiempo_pollo = etapa_2(permutation, hora_fin_etapa_1, tiempo_sis_1)
 
     return float(np.mean(hora_sistema_total)), float(np.var(hora_sistema_total)), df1, df2, media_tiempo_refrescos, media_tiempo_freidora, media_tiempo_pollo
+
+
+def simular_2(permutation: Config) -> tuple[float, float, Any, Any, floating, floating, floating]:
+    hora_fin_etapa_1, tiempo_sis_1, df1 = etapa_1(permutation.cajas)
+    hora_sistema_total, df2, media_tiempo_refrescos, media_tiempo_freidora, media_tiempo_pollo = etapa_2_2(permutation,
+                                                                                                         hora_fin_etapa_1,
+                                                                                                         tiempo_sis_1)
+    return float(np.mean(hora_sistema_total)), float(
+        np.var(hora_sistema_total)), df1, df2, media_tiempo_refrescos, media_tiempo_freidora, media_tiempo_pollo
 
 def graficar_all(medias, freq, mejor_tiempo, mejor_config, mediana, moda, varianza, c1, c2, c3, p95, cov_ref_frei, cov_frei_pol, cov_ref_pol):
     fig = plt.figure(figsize=(16, 10))
@@ -342,7 +402,7 @@ def graficar_all(medias, freq, mejor_tiempo, mejor_config, mediana, moda, varian
     ax2.set_ylabel('Tiempo (min)', fontsize=12)
     ax2.set_title('Box Plot', fontsize=14, fontweight='bold')
     ax2.grid(True, alpha=0.3, axis='y')
-    
+
     # cuartiles
     ax2.text(1.15, c1, f'Q1: {c1:.2f}', fontsize=9, va='center')
     ax2.text(1.15, c2, f'Q2: {c2:.2f}', fontsize=9, va='center')
@@ -352,13 +412,13 @@ def graficar_all(medias, freq, mejor_tiempo, mejor_config, mediana, moda, varian
     ax3 = fig.add_subplot(gs[1, :2])
     tiempos_ordenados = sorted(freq.keys())
     frecuencias = [freq[k] for k in tiempos_ordenados]
-    
+
     bars = ax3.bar(tiempos_ordenados, frecuencias, edgecolor='black', alpha=0.7, color='coral')
-    
+
     if moda in freq:
         idx_moda = tiempos_ordenados.index(moda)
         bars[idx_moda].set_color('red')
-    
+
     ax3.set_xlabel('Tiempo Medio (min)', fontsize=12)
     ax3.set_ylabel('Frecuencia', fontsize=12)
     ax3.set_title('Frecuencias de Tiempos (Moda en Rojo)', fontsize=14, fontweight='bold')
@@ -367,7 +427,7 @@ def graficar_all(medias, freq, mejor_tiempo, mejor_config, mediana, moda, varian
     # tabla estadistica
     ax4 = fig.add_subplot(gs[1, 2])
     ax4.axis('off')
-    
+
     stats_text = f"""
     ESTADÍSTICAS DESCRIPTIVAS
     {'='*30}
@@ -388,7 +448,7 @@ def graficar_all(medias, freq, mejor_tiempo, mejor_config, mediana, moda, varian
     Q3 (P75):     {c3:.3f} min
     P95:          {p95:.3f} min
     """
-    
+
     ax4.text(0.1, 0.9, stats_text, transform=ax4.transAxes,
              fontsize=10, verticalalignment='top',
              fontfamily='monospace',
@@ -396,32 +456,32 @@ def graficar_all(medias, freq, mejor_tiempo, mejor_config, mediana, moda, varian
 
     # covarianza
     ax5 = fig.add_subplot(gs[2, :2])
-    
+
     covs = {
         'Refrescos\nvs\nFreidora': cov_ref_frei,
         'Freidora\nvs\nPollo': cov_frei_pol,
         'Refrescos\nvs\nPollo': cov_ref_pol
     }
-    
+
     colors = ['green' if v > 0 else 'red' for v in covs.values()]
     bars = ax5.bar(covs.keys(), covs.values(), color=colors, edgecolor='black', alpha=0.7)
-    
+
     ax5.axhline(0, color='black', linewidth=0.8)
     ax5.set_ylabel('Covarianza', fontsize=12)
     ax5.set_title('Covarianzas entre Estaciones (Mejor Config)', fontsize=14, fontweight='bold')
     ax5.grid(True, alpha=0.3, axis='y')
-    
+
     for bar, val in zip(bars, covs.values()):
         height = bar.get_height()
         ax5.text(bar.get_x() + bar.get_width()/2., height,
                 f'{val:.3f}',
                 ha='center', va='bottom' if height > 0 else 'top',
                 fontsize=10, fontweight='bold')
-        
+
     # mejor config
     ax6 = fig.add_subplot(gs[2, 2])
     ax6.axis('off')
-    
+
     config_text = f"""
     MEJOR CONFIGURACIÓN
     {'='*30}
@@ -436,16 +496,16 @@ def graficar_all(medias, freq, mejor_tiempo, mejor_config, mediana, moda, varian
     • Pollo:      {mejor_config.pollo} servidores
     
     """
-    
+
     ax6.text(0.1, 0.9, config_text, transform=ax6.transAxes,
              fontsize=11, verticalalignment='top',
              fontfamily='monospace',
              bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.5))
-    
+
     # Título general
-    fig.suptitle('Dashboard de Optimización - Sistema de Colas', 
+    fig.suptitle('Dashboard de Optimización - Sistema de Colas',
                  fontsize=16, fontweight='bold', y=0.98)
-    
+
     plt.savefig('resultados_optimizacion.png', dpi=300, bbox_inches='tight')
     plt.show()
 
@@ -523,16 +583,64 @@ def minimizar(presupuesto: int) -> tuple[float | floating, list[int] | None]:
 
     return mejor_tiempo, mejor_config
 
+
+def encontrar_costo(meta_minutos=3.0):
+    configuraciones = []
+
+    for c in range(1, 5):
+        for r in range(1, 5):
+            for f in range(1, 5):
+                for p in range(1, 5):
+                    costo = (c * COSTOS['cajas'] +
+                             r * COSTOS['refrescos'] +
+                             f * COSTOS['freidora'] +
+                             p * COSTOS['pollo'])
+                    configuraciones.append(Config(c, r, f, p, costo))
+
+    # ORDENAR POR COSTO
+    configuraciones.sort(key=lambda x: x.costo)
+
+    print(f"Buscando configuración mínima para espera <= {meta_minutos} min...")
+    for config in configuraciones:
+
+        conf = simular_2(config)
+        media_preliminar = conf[0]
+        print(media_preliminar)
+        if media_preliminar <= meta_minutos:
+            return config, media_preliminar
+
+    return None, None
+
 def main():
     validar_distribuciones()
+    print("\n")
+    mejor_config, tiempo_espera = encontrar_costo(3.0)
+
+    if mejor_config is not None:
+        print(f"--- RESULTADO OBJETIVO 2.a ---")
+        print(f"Costo Mínimo Necesario: ${mejor_config.costo}")
+        print(f"Configuración Óptima:")
+        print(f"  - Cajas: {mejor_config.cajas}")
+        print(f"  - Refrescos: {mejor_config.refrescos}")
+        print(f"  - Freidoras: {mejor_config.freidora}")
+        print(f"  - Parrillas Pollo: {mejor_config.pollo}")
+        print(f"Tiempo de espera promedio logrado: {tiempo_espera:.2f} min")
+    print("\n")
+    print("Medias")
+    mediaa, config_mediaa = minimizar(2000)
+
+    print("Minimizacion media 2000:", mediaa)
+    print(f"\tCajas: {config_mediaa.cajas}" )
+    print(f"\tRefrescos: {config_mediaa.refrescos}")
+    print(f"\tFreidora: {config_mediaa.freidora}")
+    print(f"\tPollo: {config_mediaa.pollo}")
+
     media, config_media = minimizar(3000)
 
-    print("Minimizacion media:", media)
+    print("Minimizacion media 3000:", media)
     print(f"\tCajas: {config_media.cajas}" )
     print(f"\tRefrescos: {config_media.refrescos}")
     print(f"\tFreidora: {config_media.freidora}")
     print(f"\tPollo: {config_media.pollo}")
-
-
 if __name__ == '__main__':
     main()
