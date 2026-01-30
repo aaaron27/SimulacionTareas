@@ -22,7 +22,7 @@ PROBABILIDADES = [0.9, 0.7, 0.3]
 
 PATH_MUESTRA_POISSON = 'data/muestra_poisson.txt'
 
-REPETICIONES_TOTALES = 10
+REPETICIONES_TOTALES = 100
 
 MEDIA_CAJAS = 2.5
 MEDIA_REFRESCOS = 0.75
@@ -307,15 +307,14 @@ def etapa_2(permutacion, hora_llegada: list[float], tiempo_sis_1: list[float]):
             media_refrescos, media_freidoras, media_pollos)
 
 
-def etapa_2_2(permutacion, hora_fin_e1: list[int], esperas_e1: list[float]):
+def etapa_2_2(permutacion, hora_fin_e1: list[int], esperas_e1: list[float], p_pollo = 0.3):
     ordenes_input = []
-    # Emparejamos cada salida de caja con su espera previa
+    probs_locales = [0.9, 0.7, p_pollo]
     for i in range(len(hora_fin_e1)):
         cant_ordenes = get_cant_ordenes(5, 0.4)
-        gustos = get_estaciones()
+        gustos = [random() <= p for p in probs_locales]
         for _ in range(cant_ordenes):
             targets = [j for j, g in enumerate(gustos) if g]
-            # Pasamos la hora de llegada a etapa 2 y la espera que ya trae de la caja
             if not targets:
                 ordenes_input.append((hora_fin_e1[i], -1, esperas_e1[i]))
             else:
@@ -335,7 +334,6 @@ def etapa_2_2(permutacion, hora_fin_e1: list[int], esperas_e1: list[float]):
         if gusto == -1:
             esperas_totales.append(espera_e1)
         else:
-            # Seleccionar servidor y calcular espera en etapa 2
             if gusto == 0:  # Refrescos
                 idx = get_servidor_disponible(serv_ref, hora_llegada_e2)
                 inicio = max(hora_llegada_e2, serv_ref[idx])
@@ -354,11 +352,7 @@ def etapa_2_2(permutacion, hora_fin_e1: list[int], esperas_e1: list[float]):
                 espera_e2 = inicio - hora_llegada_e2
                 serv_pol[idx] = inicio + get_random_tiempo_pollo()
                 tiempos_pol.append(espera_e2)
-
-            # EL RESULTADO ES LA SUMA DE TODAS LAS ESPERAS (FILAS)
             esperas_totales.append(espera_e1 + espera_e2)
-
-    # Medias de espera por estación para la covarianza (pueden ser 0 si no hubo pedidos)
     m_ref = np.mean(tiempos_ref) if tiempos_ref else 0
     m_frei = np.mean(tiempos_frei) if tiempos_frei else 0
     m_pol = np.mean(tiempos_pol) if tiempos_pol else 0
@@ -367,7 +361,7 @@ def etapa_2_2(permutacion, hora_fin_e1: list[int], esperas_e1: list[float]):
 
 def simular(permutation: Config) -> tuple[float, float, Any, Any, floating, floating, floating]:
     hora_fin_etapa_1, tiempo_sis_1, df1 = etapa_1(permutation.cajas)
-    hora_sistema_total, df2, media_total,  media_tiempo_refrescos, media_tiempo_freidora, media_tiempo_pollo = etapa_2(permutation, hora_fin_etapa_1, tiempo_sis_1)
+    hora_sistema_total, df2, media_total,media_tiempo_refrescos, media_tiempo_freidora, media_tiempo_pollo = etapa_2(permutation, hora_fin_etapa_1, tiempo_sis_1)
 
     return float(np.mean(hora_sistema_total)), float(np.var(hora_sistema_total)), df1, df2, media_tiempo_refrescos, media_tiempo_freidora, media_tiempo_pollo
 
@@ -379,6 +373,64 @@ def simular_2(permutation: Config) -> tuple[float, float, Any, Any, floating, fl
                                                                                                          tiempo_sis_1)
     return float(np.mean(hora_sistema_total)), float(
         np.var(hora_sistema_total)), df1, df2, media_tiempo_refrescos, media_tiempo_freidora, media_tiempo_pollo
+
+
+def graficar_histograma(medias, mejor_tiempo, mediana, moda):
+    plt.figure(figsize=(10, 6))
+    plt.hist(medias, bins=30, edgecolor='black', alpha=0.7, color='skyblue')
+    plt.axvline(mejor_tiempo, color='red', linestyle='--', linewidth=2, label=f'Mejor: {mejor_tiempo:.2f}')
+    plt.axvline(mediana, color='green', linestyle='--', linewidth=2, label=f'Mediana: {mediana:.2f}')
+    plt.axvline(moda, color='orange', linestyle='--', linewidth=2, label=f'Moda: {moda}')
+    plt.xlabel('Tiempo Medio (min)')
+    plt.ylabel('Frecuencia')
+    plt.title('Distribución de Tiempos Medios')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.show()
+
+
+def graficar_boxplot(medias, c1, c2, c3):
+    plt.figure(figsize=(6, 8))
+    bp = plt.boxplot(medias, vert=True, patch_artist=True)
+    bp['boxes'][0].set_facecolor('lightblue')
+    plt.text(1.1, c1, f'Q1: {c1:.2f}', va='center')
+    plt.text(1.1, c2, f'Q2: {c2:.2f}', va='center')
+    plt.text(1.1, c3, f'Q3: {c3:.2f}', va='center')
+    plt.ylabel('Tiempo (min)')
+    plt.title('Box Plot de Tiempos')
+    plt.grid(True, alpha=0.3, axis='y')
+    plt.show()
+
+
+def graficar_frecuencias(freq, moda):
+    plt.figure(figsize=(10, 6))
+    tiempos_ordenados = sorted(freq.keys())
+    frecuencias = [freq[k] for k in tiempos_ordenados]
+    bars = plt.bar(tiempos_ordenados, frecuencias, edgecolor='black', alpha=0.7, color='coral')
+
+    if moda in freq:
+        idx_moda = tiempos_ordenados.index(moda)
+        bars[idx_moda].set_color('red')
+
+    plt.xlabel('Tiempo Medio (min)')
+    plt.ylabel('Frecuencia')
+    plt.title('Frecuencias de Tiempos (Moda en Rojo)')
+    plt.show()
+
+
+def graficar_covarianzas(cov_ref_frei, cov_frei_pol, cov_ref_pol):
+    plt.figure(figsize=(10, 6))
+    covs = {'Ref vs Frei': cov_ref_frei, 'Frei vs Pollo': cov_frei_pol, 'Ref vs Pollo': cov_ref_pol}
+    colors = ['green' if v > 0 else 'red' for v in covs.values()]
+    bars = plt.bar(covs.keys(), covs.values(), color=colors, edgecolor='black', alpha=0.7)
+    plt.axhline(0, color='black', linewidth=0.8)
+    plt.title('Covarianzas entre Estaciones')
+
+    for bar in bars:
+        yval = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width() / 2, yval, f'{yval:.3f}', ha='center',
+                 va='bottom' if yval > 0 else 'top')
+    plt.show()
 
 def graficar_all(medias, freq, mejor_tiempo, mejor_config, mediana, moda, varianza, c1, c2, c3, p95, cov_ref_frei, cov_frei_pol, cov_ref_pol):
     fig = plt.figure(figsize=(16, 10))
@@ -493,7 +545,16 @@ def graficar_all(medias, freq, mejor_tiempo, mejor_config, mediana, moda, varian
     fig.suptitle('Dashboard de Optimización - Sistema de Colas',
                  fontsize=16, fontweight='bold', y=0.98)
 
+    graficar_histograma(medias, mejor_tiempo, mediana, moda)
+    graficar_boxplot(medias, c1, c2, c3)
+    graficar_frecuencias(freq, moda)
+
+    graficar_covarianzas(cov_ref_frei, cov_frei_pol, cov_ref_pol)
+
     plt.savefig('resultados_optimizacion.png', dpi=300, bbox_inches='tight')
+
+
+
     plt.show()
 
 def minimizar(presupuesto: int) -> tuple[float | floating, list[int] | None]:
@@ -518,7 +579,7 @@ def minimizar(presupuesto: int) -> tuple[float | floating, list[int] | None]:
         tiempos_pol = []
 
         for _ in range(REPETICIONES_TOTALES + 20):
-            media_sim, _, _, _, media_refre, media_frei, media_pol = simular(p)
+            media_sim, _, _, _, media_refre, media_frei, media_pol = simular_2(p)
             tiempos_medios.append(media_sim)
             tiempos_ref.append(media_refre)
             tiempos_frei.append(media_frei)
@@ -598,6 +659,152 @@ def encontrar_costo(meta_minutos=3.0):
 
     return None, None
 
+
+def simular_d(config: Config, repeticiones=REPETICIONES_TOTALES):
+    MEDIA_CAJAS_D = 2.0
+
+    medias_totales = []
+    medias_ref, medias_frei, medias_pol = [], [], []
+
+    for _ in range(repeticiones):
+        llegadas = calc_hora_llegada()
+        if not llegadas: continue
+
+        servidores_cajas = [0.0] * config.cajas
+        esperas_e1 = []
+        salidas_e1 = []
+
+        for t in llegadas:
+            idx = get_servidor_disponible(servidores_cajas, t)
+            inicio = max(t, servidores_cajas[idx])
+            esperas_e1.append(inicio - t)
+
+            atencion = np.random.exponential(MEDIA_CAJAS_D)
+            fin = inicio + atencion
+            servidores_cajas[idx] = fin
+            salidas_e1.append(fin)
+
+        e_totales, _, m_ref, m_frei, m_pol = etapa_2_2(config, salidas_e1, esperas_e1)
+
+        if e_totales:
+            medias_totales.append(np.mean(e_totales))
+            medias_ref.append(m_ref)
+            medias_frei.append(m_frei)
+            medias_pol.append(m_pol)
+
+    return np.mean(medias_totales), medias_totales, medias_ref, medias_frei, medias_pol
+
+
+def calcular_estadis(medias, t_ref, t_frei, t_pol):
+    # Frecuencias para el histograma de barras
+    freq = {}
+    for m in medias:
+        r = round(m)
+        freq[r] = freq.get(r, 0) + 1
+
+    # Percentiles y medidas de tendencia
+    c1, c2, c3 = np.percentile(medias, [25, 50, 75])
+
+    return {
+        'freq': freq,
+        'valores': {
+            'mediana': np.median(medias),
+            'moda': max(set(round(m) for m in medias), key=[round(x) for x in medias].count),
+            'varianza': np.var(medias),
+            'c1': c1, 'c2': c2, 'c3': c3,
+            'p95': np.percentile(medias, 95),
+            'cov_ref_frei': np.cov(t_ref, t_frei)[0, 1] if len(t_ref) > 1 else 0,
+            'cov_frei_pol': np.cov(t_frei, t_pol)[0, 1] if len(t_frei) > 1 else 0,
+            'cov_ref_pol': np.cov(t_ref, t_pol)[0, 1] if len(t_ref) > 1 else 0
+        }
+    }
+
+def evaluar_2d():
+    print("\n--- EVALUACION OBJETIVO 2.d ---")
+    configuraciones = generar_configuraciones(3000)
+    configuraciones.sort(key=lambda x: x.costo)
+
+    mejor_conf = None
+    for conf in configuraciones:
+        media_espera = simular_d(conf, repeticiones=20)[0]
+        if media_espera <= 3.0:
+            mejor_conf = conf
+            break
+
+    if mejor_conf:
+        media_final, medias, m_ref, m_frei, m_pol = simular_d(mejor_conf)
+
+        stats = calcular_estadis(medias, m_ref, m_frei, m_pol)
+
+        print(f"Mejor Config 2.d: {mejor_conf}")
+        graficar_all(medias, stats['freq'], media_final, mejor_conf, **stats['valores'])
+
+
+def evaluar_2e():
+    print("\n--- (Probabilidad Pollo: 0.50) ---")
+
+    configs = generar_configuraciones(3500)
+    configs.sort(key=lambda x: x.costo)
+
+    meta_espera = 3.0
+    p_pollo_nuevo = 0.50
+    mejor_conf = None
+    media_final = None
+    datos_graficos = {'medias': [], 't_ref': [], 't_frei': [], 't_pol': []}
+
+    for conf in configs:
+        temp_medias = []
+        temp_ref, temp_frei, temp_pol = [], [], []
+
+        for _ in range(REPETICIONES_TOTALES):
+            h_fin1, e1, _ = etapa_1(conf.cajas)
+            if not h_fin1: continue
+
+            e_tot, _, m_ref, m_frei, m_pol = etapa_2_2(conf, h_fin1, e1, p_pollo=p_pollo_nuevo)
+
+            if e_tot:
+                media_run = np.mean(e_tot)
+                temp_medias.append(media_run)
+                temp_ref.append(m_ref)
+                temp_frei.append(m_frei)
+                temp_pol.append(m_pol)
+
+        media_dia = np.mean(temp_medias) if temp_medias else float('inf')
+
+        if media_dia <= meta_espera:
+            print(f"Resultado para Demanda de Pollo al 50%:")
+            print(
+                f"  - Configuración: Cajas={conf.cajas}, Ref={conf.refrescos}, Frei={conf.freidora}, Pollo={conf.pollo}")
+            print(f"  - Costo Mínimo: ${conf.costo}")
+            print(f"  - Tiempo de espera promedio: {media_dia:.4f} min")
+
+            mejor_conf = conf
+            media_final = media_dia
+            datos_graficos['medias'] = temp_medias
+            datos_graficos['t_ref'] = temp_ref
+            datos_graficos['t_frei'] = temp_frei
+            datos_graficos['t_pol'] = temp_pol
+            break
+
+    if mejor_conf:
+        medias = datos_graficos['medias']
+
+        freq = {round(m): medias.count(m) for m in set(round(x) for x in medias)}
+        mediana = np.median(medias)
+        varianza = np.var(medias)
+        moda = round(mediana)
+        c1, c2, c3 = np.percentile(medias, [25, 50, 75])
+        p95 = np.percentile(medias, 95)
+
+        cov_ref_frei = np.cov(datos_graficos['t_ref'], datos_graficos['t_frei'])[0, 1]
+        cov_frei_pol = np.cov(datos_graficos['t_frei'], datos_graficos['t_pol'])[0, 1]
+        cov_ref_pol = np.cov(datos_graficos['t_ref'], datos_graficos['t_pol'])[0, 1]
+
+        graficar_all(medias, freq, media_final, mejor_conf, mediana, moda,
+                     varianza, c1, c2, c3, p95, cov_ref_frei, cov_frei_pol, cov_ref_pol)
+
+    return mejor_conf, media_final
+
 def main():
     validar_distribuciones()
     print("\n")
@@ -629,5 +836,9 @@ def main():
     print(f"\tRefrescos: {config_media.refrescos}")
     print(f"\tFreidora: {config_media.freidora}")
     print(f"\tPollo: {config_media.pollo}")
+
+    evaluar_2d()
+    evaluar_2e()
+
 if __name__ == '__main__':
     main()
